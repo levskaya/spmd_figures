@@ -1,27 +1,31 @@
 import * as THREE from 'three';
 
-// color defs
+// Colors
 const teal = 0x006699;
 const red = 0x990000;
 
-// ortho camera
-// TODO(levskaya): fix screen size to match window aspect
+// Cameras
 const frustumSize = 3;
 const aspect = window.innerWidth / window.innerHeight;
-const camera = new THREE.OrthographicCamera(frustumSize * aspect / - 2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, 0.01, 10);
-// const camera = new THREE.OrthographicCamera(-3, 3, -1, 1, 0.01, 10);
+const camera = new THREE.OrthographicCamera(
+	/*left*/   frustumSize * aspect / - 2,
+	/*right*/  frustumSize * aspect / 2,
+	/*top*/    frustumSize / 2,
+	/*bottom*/ frustumSize / - 2,
+	/*near*/   0.01,
+	/*far*/    10);
 camera.position.z = 1;
 
-// perspective camera
-// const camera = new THREE.PerspectiveCamera(70, aspect, 0.01, 10);
+// const camera = new THREE.PerspectiveCamera(/*fov*/ 70, aspect, /*near*/ 0.01, /*far*/ 10);
 // camera.position.z = 1;
 
-// materials
+// Materials
 const material = new THREE.MeshNormalMaterial();
 const matDark = new THREE.LineBasicMaterial( {
 	color: teal,
 	side: THREE.DoubleSide
 } );
+
 const matLite = new THREE.MeshBasicMaterial( {
 	color: teal,
 	transparent: true,
@@ -37,6 +41,8 @@ function simple_mat(color, opacity) {
 		side: THREE.DoubleSide
 	} );
 }
+
+// Scenegraph
 
 const scene = new THREE.Scene();
 
