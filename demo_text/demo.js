@@ -33,64 +33,40 @@ function init( ) {
 		} );
 
 		const message = '   Three.js\nSimple text.';
-
 		const shapes = font.generateShapes( message, 100 );
-
 		const geometry = new THREE.ShapeGeometry( shapes );
-
 		geometry.computeBoundingBox();
-
 		const xMid = - 0.5 * ( geometry.boundingBox.max.x - geometry.boundingBox.min.x );
-
 		geometry.translate( xMid, 0, 0 );
 
 		// make shape ( N.B. edge view not visible )
-
 		const text = new THREE.Mesh( geometry, matLite );
 		text.position.z = - 150;
 		scene.add( text );
 
 		// make line shape ( N.B. edge view remains visible )
-
 		const holeShapes = [];
-
 		for ( let i = 0; i < shapes.length; i ++ ) {
-
 			const shape = shapes[ i ];
-
 			if ( shape.holes && shape.holes.length > 0 ) {
-
 				for ( let j = 0; j < shape.holes.length; j ++ ) {
-
 					const hole = shape.holes[ j ];
 					holeShapes.push( hole );
-
 				}
-
 			}
-
 		}
-
 		shapes.push.apply( shapes, holeShapes );
 
 		const lineText = new THREE.Object3D();
-
 		for ( let i = 0; i < shapes.length; i ++ ) {
-
 			const shape = shapes[ i ];
-
 			const points = shape.getPoints();
 			const geometry = new THREE.BufferGeometry().setFromPoints( points );
-
 			geometry.translate( xMid, 0, 0 );
-
 			const lineMesh = new THREE.Line( geometry, matDark );
 			lineText.add( lineMesh );
-
 		}
-
 		scene.add( lineText );
-
 		render();
 
 	} ); //end load function
@@ -103,26 +79,18 @@ function init( ) {
 	const controls = new OrbitControls( camera, renderer.domElement );
 	controls.target.set( 0, 0, 0 );
 	controls.update();
-
 	controls.addEventListener( 'change', render );
-
 	window.addEventListener( 'resize', onWindowResize );
 
 } // end init
 
 function onWindowResize() {
-
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
-
 	renderer.setSize( window.innerWidth, window.innerHeight );
-
 	render();
-
 }
 
 function render() {
-
 	renderer.render( scene, camera );
-
 }

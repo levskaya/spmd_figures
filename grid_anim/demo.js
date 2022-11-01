@@ -1,8 +1,15 @@
 import * as THREE from 'three';
+import { FontLoader } from './FontLoader.js';
 
 // Colors
 const teal = 0x006699;
 const red = 0x990000;
+const white = 0xffffff;
+const black = 0x000000;
+
+// Font
+const loader = new FontLoader();
+const font = await loader.loadAsync('./helvetiker_regular.typeface.json');
 
 // Cameras
 const frustumSize = 3;
@@ -15,24 +22,14 @@ const camera = new THREE.OrthographicCamera(
 	/*near*/   0.01,
 	/*far*/    10);
 camera.position.z = 1;
-
-// const camera = new THREE.PerspectiveCamera(/*fov*/ 70, aspect, /*near*/ 0.01, /*far*/ 10);
+// const camera = new THREE.PerspectiveCamera(
+// 	/*fov*/    70,
+// 	/*aspect*/ aspect,
+// 	/*near*/   0.01,
+// 	/*far*/    10);
 // camera.position.z = 1;
 
 // Materials
-const material = new THREE.MeshNormalMaterial();
-const matDark = new THREE.LineBasicMaterial( {
-	color: teal,
-	side: THREE.DoubleSide
-} );
-
-const matLite = new THREE.MeshBasicMaterial( {
-	color: teal,
-	transparent: true,
-	opacity: 0.4,
-	side: THREE.DoubleSide
-} );
-
 function simple_mat(color, opacity) {
 	return new THREE.MeshBasicMaterial( {
 		color: color,
@@ -43,13 +40,23 @@ function simple_mat(color, opacity) {
 }
 
 // Scenegraph
-
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(white);
 
 // geometry
 
-// const geometry = new THREE.PlaneGeometry(0.2, 0.2, 2, 2);
-// const mesh = new THREE.Mesh( geometry, matDark );
+function drawText(str, sz, x, y) {
+	const shapes = font.generateShapes('A_0', sz);
+	const geometry = new THREE.ShapeGeometry(shapes);
+	geometry.computeBoundingBox();
+	const xMid = - 0.5 * (geometry.boundingBox.max.x - geometry.boundingBox.min.x);
+	geometry.translate(xMid, x, y);
+	const text = new THREE.Mesh(geometry, simple_mat(black, 1.0));
+	text.position.z = 0.0;
+	return text;
+}
+
+// grid
 
 for(let x = 0; x < 4; x++) {
 	for(let y = 0; y < 2; y++) {
@@ -73,6 +80,14 @@ for(let x = 0; x < 4; x++) {
 
 // window.mesh = mesh; // HACK
 // scene.add(mesh);
+// let geometry = new THREE.PlaneGeometry(3.0, 3.0, 2, 2);
+// let mesh = new THREE.Mesh( geometry, simple_mat(teal, 0.6) );
+// mesh.position.x = 0;
+// mesh.position.y = 0;
+// scene.add(mesh);
+
+
+scene.add(drawText("A_0", 0.05, 0.4, 0));
 
 const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
