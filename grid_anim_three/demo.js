@@ -24,12 +24,6 @@ const camera = new THREE.OrthographicCamera(
 	/*near*/   0.01,
 	/*far*/    10);
 camera.position.z = 1;
-// const camera = new THREE.PerspectiveCamera(
-// 	/*fov*/    70,
-// 	/*aspect*/ aspect,
-// 	/*near*/   0.01,
-// 	/*far*/    10);
-// camera.position.z = 1;
 
 // Materials
 function simple_mat(color, opacity) {
@@ -91,8 +85,6 @@ for(let x = 0; x < 4; x++) {
 		}
 	}
 }
-
-// const positionKF = new THREE.VectorKeyframeTrack( '.position', [ 0, 1, 2 ], [ 0, 0, 0, 1/4, 0, 0, 2/4, 0, 0 ] );
 const positionKF = new THREE.VectorKeyframeTrack( '.position', times, posns );
 const clip = new THREE.AnimationClip( 'Action', times[times.length-1] + keydur, [ positionKF ] );
 let mixer = new THREE.AnimationMixer( imesh );
@@ -101,13 +93,7 @@ clipAction.play();
 
 scene.add(imesh);
 
-
-
-// scene.add(imesh);
-
-// window.mesh = mesh; // HACK
-
-scene.add(drawText("A_0", 0.05, 0.4, 0));
+// scene.add(drawText("A_0", 0.05, 0.4, 0));
 
 const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -116,24 +102,7 @@ document.body.appendChild(renderer.domElement);
 
 // animation
 function animation(time) {
-	// mesh.position.x = Math.sin(time / 2000);
-	// mesh.rotation.y = time / 1000;
 	const delta = clock.getDelta();
-	//console.log(delta);
 	mixer.update(delta);
 	renderer.render( scene, camera );
-
 }
-
-// function animate() {
-// 	requestAnimationFrame( animate );
-// 	render();
-// }
-// function render() {
-// 	const delta = clock.getDelta();
-// 	if ( mixer ) {
-// 		mixer.update( delta );
-// 	}
-// 	renderer.render( scene, camera );
-// 	stats.update();
-// }

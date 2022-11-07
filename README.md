@@ -14,4 +14,12 @@
  - grid_layout - just a grid drawing
  - grid_anim_three - simple use of modern three js animation clip / keyframe track system
  - grid_anim_tween - simple use of tween.js to animate... it's a bit underwhelming, chaining is wonky.
+ - grid_anim_tween - simple use of gsap to animate... much better
+
+ ## animations
+
+ - matmul_anim - matmuls cost 2 * p * n * m animation
+    - still messing with both CSS and WebGL text rendering
+    - katex support feels like overkill maybe?  easy to do though.
+
 

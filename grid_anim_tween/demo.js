@@ -57,10 +57,10 @@ function drawText(str, sz, x, y) {
 
 for(let x = 0; x < 4; x++) {
 	for(let y = 0; y < 2; y++) {
-		let geometry = new THREE.PlaneGeometry(0.2, 0.2, 2, 2);
+		let geometry = new THREE.PlaneGeometry(0.4, 0.4, 2, 2);
 		let mesh = new THREE.Mesh( geometry, simple_mat(teal, 0.6) );
-		mesh.position.x = x / 4;
-		mesh.position.y = y / 4;
+		mesh.position.x = x / 2;
+		mesh.position.y = y / 2;
 		scene.add(mesh);
 	}
 }
@@ -88,9 +88,13 @@ for(let y = 1; y >= 0; y--) {
 	for(let x = 0; x < 4; x++) {
 		for(let iy = 1; iy >= 0; iy--) {
 			for(let ix = 0; ix < 2; ix++) {
-				chain.push(new TWEEN.Tween(imesh.position)
-				                    .to({x: x / 4 + ix/16 - 1/32, y: y / 4 + iy/16 - 1/32, z: 0.0}, keydur)
-									.easing(TWEEN.Easing.Cubic.Out));
+				// chain.push(new TWEEN.Tween(imesh.position)
+				//                     .to({x: x / 2 + ix/8 - 1/16, y: y / 2 + iy/8 - 1/16, z: 0.0}, keydur)
+				// 					.easing(TWEEN.Easing.Cubic.Out));
+				// can mess with multiple properties at once:
+				chain.push(new TWEEN.Tween(imesh)
+						.to({position: {x: x / 2 + ix/8 - 1/16, y: y / 2 + iy/8 - 1/16, z: 0.0}, material: {opacity: (x%2)*1.0}}, keydur)
+				        .easing(TWEEN.Easing.Cubic.Out));
 			}
 		}
 	}

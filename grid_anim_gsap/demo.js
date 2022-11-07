@@ -93,26 +93,8 @@ C_meshes.forEach( x => x.forEach(y=>scene.add(y)));
 let C_tls = arr2dInit(4, 4);
 C_meshes.forEach( (x, i) => x.forEach((y, j) => C_tls[i][j] = gsap.timeline()) );
 
-const keydur = 0.2;
+const tick = 0.2;
 
-// let t=0.0
-// for(let n = 0; n < 4; n++) {
-// 	for(let m = 0; m < 4; m++) {
-// 		C_tls[m][n].to(C_meshes[m][n].material.color, {r: 0.99, g: 0, b:0}, t);
-// 		for(let p = 0; p < 4; p++) {
-// 			t += keydur;
-// 			A_tls[p][n].to(A_meshes[p][n].material.color, {r: 0.99, g: 0, b:0}, t)
-//              		   .to(A_meshes[p][n].material.color, {r: 0, g: 0.66, b:0.99}, t + keydur/2.0);
-// 			B_tls[m][p].to(B_meshes[m][p].material.color, {r: 0.99, g: 0, b:0}, t)
-// 			           .to(B_meshes[m][p].material.color, {r: 0, g: 0.66, b:0.99}, t + keydur/2.0);
-
-// 		}
-// 		C_tls[m][n].to(C_meshes[m][n].material.color, {r: 0, g: 0.66, b:0.99}, t);
-
-// 		// C_tls[m][n].to(C_meshes[m][n].material.color, {r: 0.99, g: 0, b:0}, t)
-// 		// 		   .to(C_meshes[m][n].material.color, {r: 0, g: 0.66, b:0.99}, t + keydur/2.0);
-// 	}
-// }
 function mesh_clone(x) {
 	let y = x.clone();
 	y.material = y.material.clone();
@@ -130,7 +112,7 @@ for(let n = 0; n < 4; n++) {
 		let tl0 = Array(4).fill(0).map(() => gsap.timeline());
 		let tl1 = Array(4).fill(0).map(() => gsap.timeline());
 		for(let p = 0; p < 4; p++) {
-			t += keydur;
+			t += tick;
 			col0[p] = mesh_clone(A_meshes[p][n]);
 			col1[p] = mesh_clone(B_meshes[m][p]);
 			tl0[p].to(col0[p].material, {opacity: 0.6}, t);
@@ -138,33 +120,31 @@ for(let n = 0; n < 4; n++) {
 			tl1[p].to(col1[p].material, {opacity: 0.6}, t);
 			tl1[p].to(col1[p].position, {x: 0.25, y: 1.25 - p*0.25}, t);
 		}
-		t += keydur;
+		t += tick;
 		for(let p = 0; p < 4; p++) {
-			t += keydur;
+			t += tick;
 			A_tls[p][n].to(A_meshes[p][n].material.color, {r: 0.99, g: 0, b:0}, t)
-             		   .to(A_meshes[p][n].material.color, {r: 0, g: 0.66, b:0.99}, t + keydur/2.0);
+             		   .to(A_meshes[p][n].material.color, {r: 0, g: 0.66, b:0.99}, t + tick/2.0);
 			B_tls[m][p].to(B_meshes[m][p].material.color, {r: 0.99, g: 0, b:0}, t)
-			           .to(B_meshes[m][p].material.color, {r: 0, g: 0.66, b:0.99}, t + keydur/2.0);
+			           .to(B_meshes[m][p].material.color, {r: 0, g: 0.66, b:0.99}, t + tick/2.0);
     	    tl0[p].to(col0[p].material.color, {r: 0.99, g: 0, b:0}, t)
-				  .to(col0[p].material.color, {r: 0, g: 0.66, b:0.99}, t + keydur/2.0)
-				  .to(col0[p].position, {x: 0.5, y: 1.25 - p*0.25}, t + keydur/2.0)
+				  .to(col0[p].material.color, {r: 0, g: 0.66, b:0.99}, t + tick/2.0)
+				  .to(col0[p].position, {x: 0.5, y: 1.25 - p*0.25}, t + tick/2.0)
    			tl1[p].to(col1[p].material.color, {r: 0.99, g: 0, b:0}, t)
-				  .to(col1[p].material.color, {r: 0, g: 0.66, b:0.99}, t + keydur/2.0)
-				  .to(col1[p].position, {x: 0.5, y: 1.25 - p*0.25}, t + keydur/2.0);
+				  .to(col1[p].material.color, {r: 0, g: 0.66, b:0.99}, t + tick/2.0)
+				  .to(col1[p].position, {x: 0.5, y: 1.25 - p*0.25}, t + tick/2.0);
 		}
-		t += 3 * keydur;
+		t += 3 * tick;
 		for(let p = 0; p < 4; p++) {
 			tl0[p].to(col0[p].position, {x: 0.5, y: 1.25}, t);
 			tl1[p].to(col1[p].position, {x: 0.5, y: 1.25}, t);
 		}
-		t += 3 * keydur;
+		t += 3 * tick;
 		for(let p = 0; p < 4; p++) {
 			tl0[p].to(col0[p].material, {opacity: 0.0}, t).to(col0[p].position, {x: C_meshes[m][n].position.x, y: C_meshes[m][n].position.y}, t);
 			tl1[p].to(col1[p].material, {opacity: 0.0}, t).to(col1[p].position, {x: C_meshes[m][n].position.x, y: C_meshes[m][n].position.y}, t);
-			// tl0[p].onComplete = () => console.log("done");
-			// tl1[p].onComplete = () => (col1[p].visible = false);
 		}
-		t += 3 * keydur;
+		t += 3 * tick;
 		C_tls[m][n].to(C_meshes[m][n].material.color, {r: 0, g: 0.66, b:0.99}, t);
 
 		// C_tls[m][n].to(C_meshes[m][n].material.color, {r: 0.99, g: 0, b:0}, t)
