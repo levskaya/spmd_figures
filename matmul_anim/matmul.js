@@ -17,12 +17,12 @@ const black = new THREE.Color(0x000000);
 
 // Materials
 function simple_mat(color, opacity) {
-	return new THREE.MeshBasicMaterial( {
-		color: color,
-		transparent: true,
-		opacity: opacity,
-		side: THREE.DoubleSide
-	} );
+    return new THREE.MeshBasicMaterial( {
+        color: color,
+        transparent: true,
+        opacity: opacity,
+        side: THREE.DoubleSide
+    } );
 }
 
 // Clock
@@ -36,100 +36,100 @@ scene.background = new THREE.Color(white);
 const frustumSize = 3;
 const aspect = window.innerWidth / window.innerHeight;
 const camera = new THREE.OrthographicCamera(
-	/*left*/   frustumSize * aspect / - 2,
-	/*right*/  frustumSize * aspect / 2,
-	/*top*/    frustumSize / 2,
-	/*bottom*/ frustumSize / - 2,
-	/*near*/   0.01,
-	/*far*/    10);
+    /*left*/   frustumSize * aspect / - 2,
+    /*right*/  frustumSize * aspect / 2,
+    /*top*/    frustumSize / 2,
+    /*bottom*/ frustumSize / - 2,
+    /*near*/   0.01,
+    /*far*/    10);
 camera.position.z = 1;
 
 
 // Geometry
 
 export class Box {
-	constructor(position, size, color, opacity=0.0, scene=null) {
-	  this.geometry = new THREE.PlaneGeometry(size.x, size.y, 2, 2);
-	  this.material = simple_mat(color, opacity);
-	  this.mesh = new THREE.Mesh( this.geometry, this.material);
-	  this.mesh.position.x = position.x;
-	  this.mesh.position.y = position.y;
-	  this.mesh.position.z = 0.0;
-	  this.timeline = gsap.timeline();
-	  this.scene = scene;
-	  if(scene) {
-		  scene.add(this.mesh);
-	  }
-	}
+    constructor(position, size, color, opacity=0.0, scene=null) {
+      this.geometry = new THREE.PlaneGeometry(size.x, size.y, 2, 2);
+      this.material = simple_mat(color, opacity);
+      this.mesh = new THREE.Mesh( this.geometry, this.material);
+      this.mesh.position.x = position.x;
+      this.mesh.position.y = position.y;
+      this.mesh.position.z = 0.0;
+      this.timeline = gsap.timeline();
+      this.scene = scene;
+      if(scene) {
+          scene.add(this.mesh);
+      }
+    }
   addToScene(scene) {
-	  scene.add(this.mesh);
+      scene.add(this.mesh);
   }
   // getter/setter
   get position() {
-	  return this.mesh.position;
+      return this.mesh.position;
   }
   set position(posn) {
-	  this.mesh.position = position;
+      this.mesh.position = position;
   }
   get size() {
-	  return new THREE.Vector2(this.mesh.geometry.parameters.width, this.mesh.geometry.parameters.height);
+      return new THREE.Vector2(this.mesh.geometry.parameters.width, this.mesh.geometry.parameters.height);
   }
   get color() {
-	  return this.mesh.material.color;
+      return this.mesh.material.color;
   }
   set color(clr) {
-	  this.mesh.material.color = clr;
+      this.mesh.material.color = clr;
   }
   get opacity() {
-	  return this.mesh.material.opacity;
+      return this.mesh.material.opacity;
   }
   set opacity(opa) {
-	  this.mesh.material.opacity = opa;
+      this.mesh.material.opacity = opa;
   }
   // cloning
   clone(hide=true){
-	  const box = new Box(this.position, this.size, this.color, this.opacity, this.scene);
-	  if(hide) box.opacity = 0.0;
-	  return box
+      const box = new Box(this.position, this.size, this.color, this.opacity, this.scene);
+      if(hide) box.opacity = 0.0;
+      return box
   }
   // tweening
   toPosition(posn, t) {
-	  this.timeline.to(this.mesh.position, posn, t);
-	  return this;
+      this.timeline.to(this.mesh.position, posn, t);
+      return this;
   }
   toColor(clr, t) {
-	  this.timeline.to(this.mesh.material.color, clr, t);
-	  return this;
+      this.timeline.to(this.mesh.material.color, clr, t);
+      return this;
   }
   toOpacity(opacity, t) {
-	  this.timeline.to(this.mesh.material, {opacity: opacity}, t);
-	  return this;
+      this.timeline.to(this.mesh.material, {opacity: opacity}, t);
+      return this;
   }
   toHide(t){
-	  this.toOpacity(0.0, t);
-	  return this;
+      this.toOpacity(0.0, t);
+      return this;
   }
   toVisible(t){
-	  this.toOpacity(1.0, t);
-	  return this;
+      this.toOpacity(1.0, t);
+      return this;
   }
 }
 
 // grid helpers
 function arr2dInit(nx, ny) {
-	return new Array(nx).fill(null).map(() => new Array(ny).fill(null));
+    return new Array(nx).fill(null).map(() => new Array(ny).fill(null));
 }
 
 function makeGrid(origin, num, delta, size, clr=grey, opacity=1.0, scene=null) {
-	let boxes = arr2dInit(num.x, num.y);
-	for(let i = 0; i < num.x; i++) {
-		for(let j = 0; j < num.y; j++) {
-			let posn = {x: origin.x + i * delta.x,
-				        y: origin.y + (num.y - j) * delta.y};
-			boxes[i][j] = new Box(posn, size, clr, opacity, scene);
-		}
-	}
-	return boxes
+    let boxes = arr2dInit(num.x, num.y);
+    for(let i = 0; i < num.x; i++) {
+        for(let j = 0; j < num.y; j++) {
+            let posn = {x: origin.x + i * delta.x,
+                        y: origin.y + (num.y - j) * delta.y};
+            boxes[i][j] = new Box(posn, size, clr, opacity, scene);
+        }
+    }
+    return boxes
 }
 
 
@@ -139,117 +139,117 @@ const loader = new FontLoader();
 const font = await loader.loadAsync('./helvetiker_regular.typeface.json');
 
 export class Text {
-	constructor(position, text, size, color, opacity=0.0, scene=null) {
-	  this.text = text;
-	  this.size = size;
-  	  const shapes = font.generateShapes(text, size);
-	  this.geometry = new THREE.ShapeGeometry(shapes);
-	  this.geometry.computeBoundingBox();
-	  this.boundingBox = this.geometry.boundingBox;
-	  const xMid = - 0.5 * (this.boundingBox.max.x - this.boundingBox.min.x);
-	  const yMid = - 0.5 * (this.boundingBox.max.y - this.boundingBox.min.y);
-	  this.geometry.translate(xMid, yMid, 0);
-	  this.material = simple_mat(color, opacity);
-	  this.mesh = new THREE.Mesh( this.geometry, this.material);
-	  this.mesh.position.x = position.x;
-	  this.mesh.position.y = position.y;
-	  this.mesh.position.z = 0.0;
-	  this.timeline = gsap.timeline();
-	  this.scene = scene;
-	  if(scene) {
-		  scene.add(this.mesh);
-	  }
-	}
+    constructor(position, text, size, color, opacity=0.0, scene=null) {
+      this.text = text;
+      this.size = size;
+        const shapes = font.generateShapes(text, size);
+      this.geometry = new THREE.ShapeGeometry(shapes);
+      this.geometry.computeBoundingBox();
+      this.boundingBox = this.geometry.boundingBox;
+      const xMid = - 0.5 * (this.boundingBox.max.x - this.boundingBox.min.x);
+      const yMid = - 0.5 * (this.boundingBox.max.y - this.boundingBox.min.y);
+      this.geometry.translate(xMid, yMid, 0);
+      this.material = simple_mat(color, opacity);
+      this.mesh = new THREE.Mesh( this.geometry, this.material);
+      this.mesh.position.x = position.x;
+      this.mesh.position.y = position.y;
+      this.mesh.position.z = 0.0;
+      this.timeline = gsap.timeline();
+      this.scene = scene;
+      if(scene) {
+          scene.add(this.mesh);
+      }
+    }
   addToScene(scene) {
-	  scene.add(this.mesh);
+      scene.add(this.mesh);
   }
   get position() {
-	  return this.mesh.position;
+      return this.mesh.position;
   }
   set position(posn) {
-	  this.mesh.position = position;
+      this.mesh.position = position;
   }
   get color() {
-	  return this.mesh.material.color;
+      return this.mesh.material.color;
   }
   set color(clr) {
-	  this.mesh.material.color = clr;
+      this.mesh.material.color = clr;
   }
   get opacity() {
-	  return this.mesh.material.opacity;
+      return this.mesh.material.opacity;
   }
   set opacity(opa) {
-	  this.mesh.material.opacity = opa;
+      this.mesh.material.opacity = opa;
   }
   // cloning
   clone(hide=true){
-	  const label = new Label(this.position, this.text, this.size, this.color, this.opacity, this.scene);
-	  if(hide) label.opacity = 0.0;
-	  return label
+      const label = new Label(this.position, this.text, this.size, this.color, this.opacity, this.scene);
+      if(hide) label.opacity = 0.0;
+      return label
   }
   // tweening
   toPosition(posn, t) {
-	  this.timeline.to(this.mesh.position, posn, t);
-	  return this;
+      this.timeline.to(this.mesh.position, posn, t);
+      return this;
   }
   toColor(clr, t) {
-	  this.timeline.to(this.mesh.material.color, clr, t);
-	  return this;
+      this.timeline.to(this.mesh.material.color, clr, t);
+      return this;
   }
   toOpacity(opacity, t) {
-	  this.timeline.to(this.mesh.material, {opacity: opacity}, t);
-	  return this;
+      this.timeline.to(this.mesh.material, {opacity: opacity}, t);
+      return this;
   }
   toHide(t){
-	  this.toOpacity(0.0, t);
-	  return this;
+      this.toOpacity(0.0, t);
+      return this;
   }
   toVisible(t){
-	  this.toOpacity(1.0, t);
-	  return this;
+      this.toOpacity(1.0, t);
+      return this;
   }
 }
 
 
 export class Label {
-	constructor(position, text, size, color, opacity=0.0, scene=null) {
-	  this.text = text;
-	  this.size = size;
-	  this.textDiv = document.createElement( 'div' );
-	  this.textDiv.className = 'label';
-	  this.textDiv.style.fontSize = size;
-	  this.textDiv.style.fontFamily = "Helvetica";
-	  this.textDiv.style.color = "#" + color.getHexString();
-	  this.textDiv.style.opacity = opacity;
-	  this.textDiv.innerHTML = text;
-	  this.textObject = new CSS2DObject( this.textDiv );
-	  this.textObject.position.set( position.x, position.y, 0 );
-	  this.timeline = gsap.timeline();
-	  this.scene = scene;
-	  if(scene) {
-		  scene.add(this.textObject);
-	  }
-	}
+    constructor(position, text, size, color, opacity=0.0, scene=null) {
+      this.text = text;
+      this.size = size;
+      this.textDiv = document.createElement( 'div' );
+      this.textDiv.className = 'label';
+      this.textDiv.style.fontSize = size;
+      this.textDiv.style.fontFamily = "Helvetica";
+      this.textDiv.style.color = "#" + color.getHexString();
+      this.textDiv.style.opacity = opacity;
+      this.textDiv.innerHTML = text;
+      this.textObject = new CSS2DObject( this.textDiv );
+      this.textObject.position.set( position.x, position.y, 0 );
+      this.timeline = gsap.timeline();
+      this.scene = scene;
+      if(scene) {
+          scene.add(this.textObject);
+      }
+    }
   addToScene(scene) {
-	  scene.add(this.mesh);
+      scene.add(this.mesh);
   }
   get position() {
-	  return this.textObject.position;
+      return this.textObject.position;
   }
   set position(posn) {
-	  this.textObject.position.set(position);
+      this.textObject.position.set(position);
   }
   get color() {
-	  return new THREE.Color(this.textDiv.style.color);
+      return new THREE.Color(this.textDiv.style.color);
   }
   set color(clr) {
-	this.textDiv.style.color = clr.getHexString();
+    this.textDiv.style.color = clr.getHexString();
   }
   get opacity() {
-	  return this.mesh.material.opacity;
+      return this.mesh.material.opacity;
   }
   set opacity(opa) {
-	  this.mesh.material.opacity = opa;
+      this.mesh.material.opacity = opa;
   }
   // cloning
 //   clone(hide=true){
@@ -259,28 +259,28 @@ export class Label {
 //   }
   // tweening
   toPosition(posn, t) {
-	  this.timeline.to(this.textObject.position, posn, t);
-	  return this;
+      this.timeline.to(this.textObject.position, posn, t);
+      return this;
   }
 //   toColor(clr, t) {
 // 	  this.timeline.to(this.color, clr, t);
 // 	  return this;
 //   }
   toOpacity(opacity, t) {
-	  this.timeline.to(this.textDiv.style, {opacity: opacity}, t);
-	  return this;
+      this.timeline.to(this.textDiv.style, {opacity: opacity}, t);
+      return this;
   }
   toHide(t){
-	  this.toOpacity(0.0, t);
-	  return this;
+      this.toOpacity(0.0, t);
+      return this;
   }
   toVisible(t){
-	  this.toOpacity(1.0, t);
-	  return this;
+      this.toOpacity(1.0, t);
+      return this;
   }
   toText(text, t){
-	this.timeline.call((tx) => this.textDiv.innerHTML = tx, [text], t);
-	return this;
+    this.timeline.call((tx) => this.textDiv.innerHTML = tx, [text], t);
+    return this;
   }
   // // HTML+CSS Text handling w. KateX.
   // renderText(txt) {
@@ -327,8 +327,8 @@ const C_M_label = new Label({x: Cs[0][0].position.x, y: Cs[0][0].position.y + si
 let asterisks = Array(4).fill(null);
 let plusses = Array(4).fill(null);
 for(let p = 0; p < P; p++) {
-	asterisks[p] = new Text({x: col_origin.x + spacing, y: col_origin.y - p * spacing}, "*", 0.05, black, 0.0, scene);
-	plusses[p] = new Text({x: col_origin.x + 3*spacing, y: col_origin.y - p * spacing - spacing/2.0}, "+", 0.05, black, 0.0, scene);
+    asterisks[p] = new Text({x: col_origin.x + spacing, y: col_origin.y - p * spacing}, "*", 0.05, black, 0.0, scene);
+    plusses[p] = new Text({x: col_origin.x + 3*spacing, y: col_origin.y - p * spacing - spacing/2.0}, "+", 0.05, black, 0.0, scene);
 }
 
 // Caption element, timeline, and state variables.
@@ -340,86 +340,86 @@ const caption = new Label(caption_origin, "",  "2em", black, 1.0, scene);
 
 let t = 0.0
 for(let n = 0; n < N; n++) {
-	for(let m = 0; m < M; m++) {
-		// progressive speedup
-		if (n==0 && m==1)  { tick /= 2; }
-		if (n==1 && m==0)  { tick /= 2; }
+    for(let m = 0; m < M; m++) {
+        // progressive speedup
+        if (n==0 && m==1)  { tick /= 2; }
+        if (n==1 && m==0)  { tick /= 2; }
 
-		// highlight C matrix receiving element
-		Cs[m][n].toColor(greyred, t);
+        // highlight C matrix receiving element
+        Cs[m][n].toColor(greyred, t);
 
-		// annotate first multiplications
-		if(n==0 && m==0) {
-			caption.toText("<b>P</b> multiplications", t+2*tick);
-		}
+        // annotate first multiplications
+        if(n==0 && m==0) {
+            caption.toText("<b>P</b> multiplications", t+2*tick);
+        }
 
-		// row/col movement to mult-acc position.
-		let col0 = Array(4);
-		let col1 = Array(4);
-		for(let p = 0; p < P; p++) {
-			t += tick;
-			col0[p] = As[p][n].clone()
-			                  .toOpacity(0.6, t)
-							  .toPosition({x: col_origin.x, y: col_origin.y - p * spacing}, t);
-			col1[p] = Bs[m][p].clone()
-			                  .toOpacity(0.6, t)
-							  .toPosition({x: col_origin.x + 2 * spacing, y: col_origin.y - p * spacing}, t);
-			As[p][n].toColor(red, t).toColor(teal, t+ tick);
-			Bs[m][p].toColor(red, t).toColor(teal, t+ tick);
+        // row/col movement to mult-acc position.
+        let col0 = Array(4);
+        let col1 = Array(4);
+        for(let p = 0; p < P; p++) {
+            t += tick;
+            col0[p] = As[p][n].clone()
+                              .toOpacity(0.6, t)
+                              .toPosition({x: col_origin.x, y: col_origin.y - p * spacing}, t);
+            col1[p] = Bs[m][p].clone()
+                              .toOpacity(0.6, t)
+                              .toPosition({x: col_origin.x + 2 * spacing, y: col_origin.y - p * spacing}, t);
+            As[p][n].toColor(red, t).toColor(teal, t+ tick);
+            Bs[m][p].toColor(red, t).toColor(teal, t+ tick);
 
-			asterisks[p].toOpacity(1.0, t);
-		}
-		t += 3 * tick;
+            asterisks[p].toOpacity(1.0, t);
+        }
+        t += 3 * tick;
 
-		// annotate first additions
-		if(n==0 && m==0) caption.toText("<b>P</b> multiplications <br> + <b>P</b> additions", t+2*tick);
+        // annotate first additions
+        if(n==0 && m==0) caption.toText("<b>P</b> multiplications <br> + <b>P</b> additions", t+2*tick);
 
-		// multiply terms
-		for(let p = 0; p < P; p++) {
-			col0[p].toColor(red, t)
-			       .toColor(teal, t + tick/2)
-				   .toPosition({x: col_origin.x + 2 * spacing,
-					            y: col_origin.y - p * spacing},
-							   t + tick/2)
-			col1[p].toColor(red, t)
-			       .toColor(teal, t + tick/2)
-				   .toPosition({x: col_origin.x + 2 * spacing,
-					            y: col_origin.y - p * spacing},
-							   t + tick/2)
-			asterisks[p].toOpacity(0.0, t);
-			if(p != P-1) plusses[p].toOpacity(1.0, t);
-		}
-		t += 3 * tick;
+        // multiply terms
+        for(let p = 0; p < P; p++) {
+            col0[p].toColor(red, t)
+                   .toColor(teal, t + tick/2)
+                   .toPosition({x: col_origin.x + 2 * spacing,
+                                y: col_origin.y - p * spacing},
+                               t + tick/2)
+            col1[p].toColor(red, t)
+                   .toColor(teal, t + tick/2)
+                   .toPosition({x: col_origin.x + 2 * spacing,
+                                y: col_origin.y - p * spacing},
+                               t + tick/2)
+            asterisks[p].toOpacity(0.0, t);
+            if(p != P-1) plusses[p].toOpacity(1.0, t);
+        }
+        t += 3 * tick;
 
-		// add terms
-		for(let p = 0; p < P; p++) {
-			col0[p].toPosition({x: col_origin.x + 3 * spacing,
-				                y: col_origin.y - P * (P-2)/4 * spacing}, t)
-			col1[p].toPosition({x: col_origin.x + 3 * spacing,
-				                y: col_origin.y - P * (P-2)/4 * spacing}, t)
-			plusses[p].toOpacity(0.0, t);
-		}
+        // add terms
+        for(let p = 0; p < P; p++) {
+            col0[p].toPosition({x: col_origin.x + 3 * spacing,
+                                y: col_origin.y - P * (P-2)/4 * spacing}, t)
+            col1[p].toPosition({x: col_origin.x + 3 * spacing,
+                                y: col_origin.y - P * (P-2)/4 * spacing}, t)
+            plusses[p].toOpacity(0.0, t);
+        }
 
-		// annotate number of FLOPs
-		if(n==0 && m==0)          {Mstr = ""}
-		else if(n==0 && (m<M-1))  {Mstr = `*${m+1}`}
-		else                      {Mstr = "*M"}
-		if(n==0 && m==M-1)        {Nstr = ""}
-		else if(n<N-1 && m==M-1)  {Nstr = `*${n+1}`}
-		else if(n==N-1 && m==M-1) {Nstr = "*N"}
-		caption.toText(`<b>2*P${Mstr}${Nstr}</b> FLOPs`, t+3*tick);
+        // annotate number of FLOPs
+        if(n==0 && m==0)          {Mstr = ""}
+        else if(n==0 && (m<M-1))  {Mstr = `*${m+1}`}
+        else                      {Mstr = "*M"}
+        if(n==0 && m==M-1)        {Nstr = ""}
+        else if(n<N-1 && m==M-1)  {Nstr = `*${n+1}`}
+        else if(n==N-1 && m==M-1) {Nstr = "*N"}
+        caption.toText(`<b>2*P${Mstr}${Nstr}</b> FLOPs`, t+3*tick);
 
-		// move mult-acc result into C matrix receiving element.
-		t += 3 * tick;
-		for(let p = 0; p < P; p++) {
-			col0[p].toOpacity(0.0, t).toPosition(Cs[m][n].position, t);
-			col1[p].toOpacity(0.0, t).toPosition(Cs[m][n].position, t);
-		}
+        // move mult-acc result into C matrix receiving element.
+        t += 3 * tick;
+        for(let p = 0; p < P; p++) {
+            col0[p].toOpacity(0.0, t).toPosition(Cs[m][n].position, t);
+            col1[p].toOpacity(0.0, t).toPosition(Cs[m][n].position, t);
+        }
 
-		t += tick;
-		// un-highlight C matrix receiving element
-		Cs[m][n].toColor(teal, t);
-	}
+        t += tick;
+        // un-highlight C matrix receiving element
+        Cs[m][n].toColor(teal, t);
+    }
 }
 
 
@@ -438,6 +438,6 @@ document.body.appendChild( labelRenderer.domElement );
 
 // Animation Loop
 function animation(time) {
-	renderer.render( scene, camera );
-	labelRenderer.render(scene, camera);
+    renderer.render( scene, camera );
+    labelRenderer.render(scene, camera);
 }
