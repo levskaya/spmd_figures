@@ -317,11 +317,11 @@ let Cs = makeGrid(C_origin, {x:M, y:N}, {x:spacing, y:spacing}, {x:size, y:size}
 
 // // Static axis labels
 const A_N_label = new Label({x: As[0][0].position.x - spacing, y: As[0][0].position.y}, "N", "2em", black, 1.0, scene);
-const A_P_label = new Label({x: As[0][0].position.x, y: As[0][0].position.y + spacing}, "P", "2em", black, 1.0, scene);
+const A_P_label = new Label({x: As[0][0].position.x, y: As[0][0].position.y + size}, "P", "2em", black, 1.0, scene);
 const B_P_label = new Label({x: Bs[0][0].position.x - spacing, y: Bs[0][0].position.y}, "P", "2em", black, 1.0, scene);
-const B_M_label = new Label({x: Bs[0][0].position.x, y: Bs[0][0].position.y + spacing}, "M", "2em", black, 1.0, scene);
+const B_M_label = new Label({x: Bs[0][0].position.x, y: Bs[0][0].position.y + size}, "M", "2em", black, 1.0, scene);
 const C_N_label = new Label({x: Cs[0][0].position.x - spacing, y: Cs[0][0].position.y}, "N", "2em", black, 1.0, scene);
-const C_M_label = new Label({x: Cs[0][0].position.x, y: Cs[0][0].position.y + spacing}, "M", "2em", black, 1.0, scene);
+const C_M_label = new Label({x: Cs[0][0].position.x, y: Cs[0][0].position.y + size}, "M", "2em", black, 1.0, scene);
 
 // Mult-accum math labels
 let asterisks = Array(4).fill(null);
@@ -415,8 +415,8 @@ for(let n = 0; n < N; n++) {
 			col0[p].toOpacity(0.0, t).toPosition(Cs[m][n].position, t);
 			col1[p].toOpacity(0.0, t).toPosition(Cs[m][n].position, t);
 		}
-		t += 3 * tick;
 
+		t += tick;
 		// un-highlight C matrix receiving element
 		Cs[m][n].toColor(teal, t);
 	}
