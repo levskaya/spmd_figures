@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { FontLoader } from './FontLoader.js';
 import { CSS2DRenderer, CSS2DObject } from './CSS2DRenderer.js';
 import { gsap } from './gsap/all.js';
-// import katex from 'katex';
+import { simple_mat, Box, makeGrid, Text, Label} from './boxpusher.js';
 
 window.THREE = THREE;
 
@@ -14,16 +14,6 @@ const grey = new THREE.Color(0.9, 0.9, 0.9);
 const greyred = new THREE.Color(0.9, 0.6, 0.6);
 const white = new THREE.Color(0xffffff);
 const black = new THREE.Color(0x000000);
-
-// Materials
-function simple_mat(color, opacity) {
-    return new THREE.MeshBasicMaterial( {
-        color: color,
-        transparent: true,
-        opacity: opacity,
-        side: THREE.DoubleSide
-    } );
-}
 
 // Clock
 let clock = new THREE.Clock();
@@ -44,251 +34,20 @@ const camera = new THREE.OrthographicCamera(
     /*far*/    10);
 camera.position.z = 1;
 
+// WebGL Render
+const renderer = new THREE.WebGLRenderer({antialias: true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-// Geometry
+// CSS Element Render
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize( window.innerWidth, window.innerHeight );
+labelRenderer.domElement.style.position = 'absolute';
+labelRenderer.domElement.style.top = '0px';
+document.body.appendChild( labelRenderer.domElement );
 
-export class Box {
-    constructor(position, size, color, opacity=0.0, scene=null) {
-      this.geometry = new THREE.PlaneGeometry(size.x, size.y, 2, 2);
-      this.material = simple_mat(color, opacity);
-      this.mesh = new THREE.Mesh( this.geometry, this.material);
-      this.mesh.position.x = position.x;
-      this.mesh.position.y = position.y;
-      this.mesh.position.z = 0.0;
-      this.timeline = gsap.timeline();
-      this.scene = scene;
-      if(scene) {
-          scene.add(this.mesh);
-      }
-    }
-  addToScene(scene) {
-      scene.add(this.mesh);
-  }
-  // getter/setter
-  get position() {
-      return this.mesh.position;
-  }
-  set position(posn) {
-      this.mesh.position = position;
-  }
-  get size() {
-      return new THREE.Vector2(this.mesh.geometry.parameters.width, this.mesh.geometry.parameters.height);
-  }
-  get color() {
-      return this.mesh.material.color;
-  }
-  set color(clr) {
-      this.mesh.material.color = clr;
-  }
-  get opacity() {
-      return this.mesh.material.opacity;
-  }
-  set opacity(opa) {
-      this.mesh.material.opacity = opa;
-  }
-  // cloning
-  clone(hide=true){
-      const box = new Box(this.position, this.size, this.color, this.opacity, this.scene);
-      if(hide) box.opacity = 0.0;
-      return box
-  }
-  // tweening
-  toPosition(posn, t) {
-      this.timeline.to(this.mesh.position, posn, t);
-      return this;
-  }
-  toColor(clr, t) {
-      this.timeline.to(this.mesh.material.color, clr, t);
-      return this;
-  }
-  toOpacity(opacity, t) {
-      this.timeline.to(this.mesh.material, {opacity: opacity}, t);
-      return this;
-  }
-  toHide(t){
-      this.toOpacity(0.0, t);
-      return this;
-  }
-  toVisible(t){
-      this.toOpacity(1.0, t);
-      return this;
-  }
-}
-
-// grid helpers
-function arr2dInit(nx, ny) {
-    return new Array(nx).fill(null).map(() => new Array(ny).fill(null));
-}
-
-function makeGrid(origin, num, delta, size, clr=grey, opacity=1.0, scene=null) {
-    let boxes = arr2dInit(num.x, num.y);
-    for(let i = 0; i < num.x; i++) {
-        for(let j = 0; j < num.y; j++) {
-            let posn = {x: origin.x + i * delta.x,
-                        y: origin.y + (num.y - j) * delta.y};
-            boxes[i][j] = new Box(posn, size, clr, opacity, scene);
-        }
-    }
-    return boxes
-}
-
-
-// Native Text / Font handling.
-
-const loader = new FontLoader();
-const font = await loader.loadAsync('./helvetiker_regular.typeface.json');
-
-export class Text {
-    constructor(position, text, size, color, opacity=0.0, scene=null) {
-      this.text = text;
-      this.size = size;
-        const shapes = font.generateShapes(text, size);
-      this.geometry = new THREE.ShapeGeometry(shapes);
-      this.geometry.computeBoundingBox();
-      this.boundingBox = this.geometry.boundingBox;
-      const xMid = - 0.5 * (this.boundingBox.max.x - this.boundingBox.min.x);
-      const yMid = - 0.5 * (this.boundingBox.max.y - this.boundingBox.min.y);
-      this.geometry.translate(xMid, yMid, 0);
-      this.material = simple_mat(color, opacity);
-      this.mesh = new THREE.Mesh( this.geometry, this.material);
-      this.mesh.position.x = position.x;
-      this.mesh.position.y = position.y;
-      this.mesh.position.z = 0.0;
-      this.timeline = gsap.timeline();
-      this.scene = scene;
-      if(scene) {
-          scene.add(this.mesh);
-      }
-    }
-  addToScene(scene) {
-      scene.add(this.mesh);
-  }
-  get position() {
-      return this.mesh.position;
-  }
-  set position(posn) {
-      this.mesh.position = position;
-  }
-  get color() {
-      return this.mesh.material.color;
-  }
-  set color(clr) {
-      this.mesh.material.color = clr;
-  }
-  get opacity() {
-      return this.mesh.material.opacity;
-  }
-  set opacity(opa) {
-      this.mesh.material.opacity = opa;
-  }
-  // cloning
-  clone(hide=true){
-      const label = new Label(this.position, this.text, this.size, this.color, this.opacity, this.scene);
-      if(hide) label.opacity = 0.0;
-      return label
-  }
-  // tweening
-  toPosition(posn, t) {
-      this.timeline.to(this.mesh.position, posn, t);
-      return this;
-  }
-  toColor(clr, t) {
-      this.timeline.to(this.mesh.material.color, clr, t);
-      return this;
-  }
-  toOpacity(opacity, t) {
-      this.timeline.to(this.mesh.material, {opacity: opacity}, t);
-      return this;
-  }
-  toHide(t){
-      this.toOpacity(0.0, t);
-      return this;
-  }
-  toVisible(t){
-      this.toOpacity(1.0, t);
-      return this;
-  }
-}
-
-
-export class Label {
-    constructor(position, text, size, color, opacity=0.0, scene=null) {
-      this.text = text;
-      this.size = size;
-      this.textDiv = document.createElement( 'div' );
-      this.textDiv.className = 'label';
-      this.textDiv.style.fontSize = size;
-      this.textDiv.style.fontFamily = "Helvetica";
-      this.textDiv.style.color = "#" + color.getHexString();
-      this.textDiv.style.opacity = opacity;
-      this.textDiv.innerHTML = text;
-      this.textObject = new CSS2DObject( this.textDiv );
-      this.textObject.position.set( position.x, position.y, 0 );
-      this.timeline = gsap.timeline();
-      this.scene = scene;
-      if(scene) {
-          scene.add(this.textObject);
-      }
-    }
-  addToScene(scene) {
-      scene.add(this.mesh);
-  }
-  get position() {
-      return this.textObject.position;
-  }
-  set position(posn) {
-      this.textObject.position.set(position);
-  }
-  get color() {
-      return new THREE.Color(this.textDiv.style.color);
-  }
-  set color(clr) {
-    this.textDiv.style.color = clr.getHexString();
-  }
-  get opacity() {
-      return this.mesh.material.opacity;
-  }
-  set opacity(opa) {
-      this.mesh.material.opacity = opa;
-  }
-  // cloning
-//   clone(hide=true){
-// 	  const label = new Label(this.position, this.text, this.size, this.color, this.opacity, this.scene);
-// 	  if(hide) label.opacity = 0.0;
-// 	  return label
-//   }
-  // tweening
-  toPosition(posn, t) {
-      this.timeline.to(this.textObject.position, posn, t);
-      return this;
-  }
-//   toColor(clr, t) {
-// 	  this.timeline.to(this.color, clr, t);
-// 	  return this;
-//   }
-  toOpacity(opacity, t) {
-      this.timeline.to(this.textDiv.style, {opacity: opacity}, t);
-      return this;
-  }
-  toHide(t){
-      this.toOpacity(0.0, t);
-      return this;
-  }
-  toVisible(t){
-      this.toOpacity(1.0, t);
-      return this;
-  }
-  toText(text, t){
-    this.timeline.call((tx) => this.textDiv.innerHTML = tx, [text], t);
-    return this;
-  }
-  // // HTML+CSS Text handling w. KateX.
-  // renderText(txt) {
-  // 	katex.render(txt, this.textDiv, {throwOnError: false, displayMode: false});
-  // }
-}
-
-
+// Utils
+const v3 = (x,y,z) => new THREE.Vector3(x,y,z);
 
 // Animation Constants
 
@@ -304,9 +63,9 @@ const size = 0.1;
 const delta = 0.025;
 const spacing = size + delta;
 // origins
-const A_origin = {x: -1, y: (M-N-1)*spacing};
+const A_origin = {x: -1, y: (P-N)*spacing};
 const B_origin = {x: 0, y: 0};
-const C_origin = {x: 1, y: (M-N-1)*spacing};
+const C_origin = {x: 1, y: (P-N)*spacing};
 const col_origin = {x: -0.5, y: 1.25};
 const caption_origin = {x: 0.5, y: 1};
 
@@ -315,15 +74,22 @@ let As = makeGrid(A_origin, {x:P, y:N}, {x:spacing, y:spacing}, {x:size, y:size}
 let Bs = makeGrid(B_origin, {x:M, y:P}, {x:spacing, y:spacing}, {x:size, y:size}, teal, 1.0, scene);
 let Cs = makeGrid(C_origin, {x:M, y:N}, {x:spacing, y:spacing}, {x:size, y:size}, grey, 1.0, scene);
 
-// // Static axis labels
-const A_N_label = new Label({x: As[0][0].position.x - spacing, y: As[0][0].position.y}, "N", "2em", black, 1.0, scene);
-const A_P_label = new Label({x: As[0][0].position.x, y: As[0][0].position.y + size}, "P", "2em", black, 1.0, scene);
-const B_P_label = new Label({x: Bs[0][0].position.x - spacing, y: Bs[0][0].position.y}, "P", "2em", black, 1.0, scene);
-const B_M_label = new Label({x: Bs[0][0].position.x, y: Bs[0][0].position.y + size}, "M", "2em", black, 1.0, scene);
-const C_N_label = new Label({x: Cs[0][0].position.x - spacing, y: Cs[0][0].position.y}, "N", "2em", black, 1.0, scene);
-const C_M_label = new Label({x: Cs[0][0].position.x, y: Cs[0][0].position.y + size}, "M", "2em", black, 1.0, scene);
+// Static axis labels
+const A00p = As[0][0].position;
+const B00p = Bs[0][0].position;
+const C00p = Cs[0][0].position;
+const A_N_label = new Label({x: A00p.x - spacing, y: A00p.y},        "N", "2em", black, 1.0, scene);
+const A_P_label = new Label({x: A00p.x,           y: A00p.y + size}, "P", "2em", black, 1.0, scene);
+const B_P_label = new Label({x: B00p.x - spacing, y: B00p.y},        "P", "2em", black, 1.0, scene);
+const B_M_label = new Label({x: B00p.x,           y: B00p.y + size}, "M", "2em", black, 1.0, scene);
+const C_N_label = new Label({x: C00p.x - spacing, y: C00p.y},        "N", "2em", black, 1.0, scene);
+const C_M_label = new Label({x: C00p.x,           y: C00p.y + size}, "M", "2em", black, 1.0, scene);
 
-// Mult-accum math labels
+// Arrays for Multiply-Accumulate boxes
+let col0 = Array(4);
+let col1 = Array(4);
+
+// Multiply-Accumulate "*", "+" labels
 let asterisks = Array(4).fill(null);
 let plusses = Array(4).fill(null);
 for(let p = 0; p < P; p++) {
@@ -336,9 +102,11 @@ let Mstr = "";
 let Nstr = "";
 const caption = new Label(caption_origin, "",  "2em", black, 1.0, scene);
 
+
 // Main Loop
 
 let t = 0.0
+t+=4*tick;
 for(let n = 0; n < N; n++) {
     for(let m = 0; m < M; m++) {
         // progressive speedup
@@ -354,8 +122,6 @@ for(let n = 0; n < N; n++) {
         }
 
         // row/col movement to mult-acc position.
-        let col0 = Array(4);
-        let col1 = Array(4);
         for(let p = 0; p < P; p++) {
             t += tick;
             col0[p] = As[p][n].clone()
@@ -423,21 +189,9 @@ for(let n = 0; n < N; n++) {
 }
 
 
-// WebGL Render
-const renderer = new THREE.WebGLRenderer({antialias: true});
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setAnimationLoop(animation);
-document.body.appendChild(renderer.domElement);
-
-// CSS Element Render
-const labelRenderer = new CSS2DRenderer();
-labelRenderer.setSize( window.innerWidth, window.innerHeight );
-labelRenderer.domElement.style.position = 'absolute';
-labelRenderer.domElement.style.top = '0px';
-document.body.appendChild( labelRenderer.domElement );
-
 // Animation Loop
 function animation(time) {
     renderer.render( scene, camera );
-    labelRenderer.render(scene, camera);
+    labelRenderer.render( scene, camera );
 }
+renderer.setAnimationLoop(animation);
