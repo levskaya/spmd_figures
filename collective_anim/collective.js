@@ -74,7 +74,7 @@ const smul3 = (s, a) => ({x: s * a.x, y: s * a.y, z: s * a.z});
 let tick = 0.3;
 
 // matrix sizes
-const N = 4;
+const N = 12;
 
 
 // Cameras
@@ -109,7 +109,7 @@ const col_origin = {x: -N * N * spacing / 2 - N*spacing, y: 0., z:0.};
 
 // Position grids
 
-function multiGrid(origin, num, delta, ioffset, inum, idelta) {
+function multiGrid(origin, num, delta, ioffset, inum, idelta, transpose=false) {
   let orows = arr2dInit(num.x, num.y);
   let rows = arr4dInit(num.x, num.y, inum.x, inum.y);
 
@@ -131,35 +131,6 @@ function multiGrid(origin, num, delta, ioffset, inum, idelta) {
 }
 
 
-// function multiGrid(origin, num, delta, ioffset, inum, idelta) {
-//   let orows = new Array();
-//   let rows = new Array();
-//   for(let i = 0; i < num.x; i++) {
-//     let ocols = new Array();
-//     let cols = new Array();
-//     for(let j = 0; j < num.y; j++) {
-//       let oidx = {x: i, y: num.y-j, z: 0};
-//       let outer = add3(origin, mul3(oidx, delta));
-//       ocols.push(outer);
-//       let irows = new Array();
-//       for(let k = 0; k < inum.x; k++) {
-//         let icols = new Array();
-//         for(let l = 0; l < inum.y; l++) {
-//           let iidx = {x: k, y: inum.y-l, z: 0};
-//           let inner = add3(add3(outer, ioffset), mul3(iidx, idelta));
-//           icols.push(inner);
-//         }
-//         irows.push(icols);
-//       }
-//       cols.push(irows);
-//     }
-//     orows.push(ocols);
-//     rows.push(cols);
-//   }
-//   return [orows, rows];
-// }
-
-
 const [device_posns, shard_posns] = multiGrid(
   col_origin,
   {x:N, y:1},
@@ -167,6 +138,7 @@ const [device_posns, shard_posns] = multiGrid(
   {x:spacing, y:-2*spacing, z:0},
   {x:N, y:1},
   {x:spacing, y:spacing, z:0},
+  true // transpose
   );
 
 
@@ -191,9 +163,10 @@ t+=1*tick;
 
 
 for(let n = 0; n < N; n++) {
-    shards[n][n] = new Box(sub3(shard_posns[N/2][0][n][0], {x:N*spacing/2, y:0, z:0}),
-                         {x: spacing, y: N*spacing},
-                         black, 1.0, scene);
+    shards[n][n] = new Box(
+      sub3(shard_posns[N/2][0][n][0], {x: N * spacing/2, y:0, z:0}),
+      {x: spacing, y: N*spacing},
+      black, 1.0, scene);
 }
 
 
