@@ -1,3 +1,47 @@
+const geometry = new THREE.BufferGeometry();
+const vertices = new Float32Array( [
+	-1.0, -1.0,  -1.0,
+	 1.0, -1.0,  -1.0,
+	 1.0,  1.0,  -1.0,
+
+	 1.0,  1.0,  -1.0,
+	-1.0,  1.0,  -1.0,
+	-1.0, -1.0,  -1.0
+] );
+geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+geometry.computeVertexNormals();
+const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+const mesh = new THREE.Mesh( geometry, material );
+
+const matDark = new THREE.LineBasicMaterial( {
+    color: grey,
+    side: THREE.DoubleSide
+} );
+
+const tl = gsap.timeline();
+
+
+const vertices2 = new Float32Array(3*6);
+for(let i=0; i<6; i++){
+    vertices2[3*i]   = vertices[3*i];
+    vertices2[3*i+1] = vertices[3*i+1];
+    vertices2[3*i+2] = vertices[3*i+2];
+}
+tl.to(mesh.geometry.attributes.position.array,
+        {endArray: vertices2,
+         duration: 1,
+         onUpdate: () => mesh.geometry.attributes.position.needsUpdate = true})
+
+scene.add(mesh);
+console.log(mesh.scale);
+
+geometry.rotateX(0.3);
+console.log(geometry.attributes.position);
+tl.to(mesh.scale, {x: 2, y:1, z:1}, t);
+
+
+
+
 
 // broken
 function get_katex_dims(txt, sz) {
