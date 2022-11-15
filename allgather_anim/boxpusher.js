@@ -18,7 +18,7 @@ export function simple_mat(color, opacity) {
 export class Box {
     constructor(position, size, color, opacity=0.0, scene=null, cloned_animations=null) {
       // Manually construct non-centered geometry.
-      //this.geometry = new THREE.PlaneGeometry(size.x, size.y, 1, 1);
+      // same as THREE.PlaneGeometry(size.x, size.y, 1, 1)
       this.geometry = new THREE.BufferGeometry();
       this.geometry.parameters = {width: size.x, height: size.y};
       const vertices = [];
