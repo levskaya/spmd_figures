@@ -73,13 +73,13 @@ const smul3 = (s, a) => ({x: s * a.x, y: s * a.y, z: s * a.z});
 // speed
 let tick = 0.3;
 
-// Number of shards / Number of devices
-const N = 8;
+// matrix sizes
+const N = 12;
+
 
 // Cameras
-const frustumSize = 3 * N;
+const frustumSize = 3*N;
 const aspect = window.innerWidth / window.innerHeight;
-// Orthographic
 const camera = new THREE.OrthographicCamera(
     /*left*/   frustumSize * aspect / - 2,
     /*right*/  frustumSize * aspect / 2,
@@ -88,15 +88,15 @@ const camera = new THREE.OrthographicCamera(
     /*near*/   0.01,
     /*far*/    10);
 camera.position.z = 1;
-// Perspective
+
 // const camera = new THREE.PerspectiveCamera(
 // 	/*fov*/    70,
 // 	/*aspect*/ aspect,
 // 	/*near*/   0.01,
 // 	/*far*/    10);
 // // camera.position.z = 1;
-// camera.position.set( 0, 0, 10 );
-// camera.lookAt(0,0,0);
+// camera.position.set( 0, 0, 5 );
+
 
 // grid spacing
 const size = 0.1;
@@ -104,12 +104,12 @@ const delta = 0.025;
 const spacing = size + delta;
 
 // origins
-const grid_origin = {x: -N * N * spacing / 2 - N*spacing, y: 0., z:0.};
+const col_origin = {x: -N * N * spacing / 2 - N*spacing, y: 0., z:0.};
 
 
 // Position grids
 
-function multiGrid(origin, num, delta, ioffset, inum, idelta) {
+function multiGrid(origin, num, delta, ioffset, inum, idelta, transpose=false) {
   let orows = arr2dInit(num.x, num.y);
   let rows = arr4dInit(num.x, num.y, inum.x, inum.y);
 
@@ -132,16 +132,18 @@ function multiGrid(origin, num, delta, ioffset, inum, idelta) {
 
 
 const [device_posns, shard_posns] = multiGrid(
-  grid_origin,
+  col_origin,
   {x:N, y:1},
   {x:(N+3)*spacing, y:(N+3)*spacing, z:0},
-  {x:spacing, y:0, z:0},
-  {x:1, y:N},
-  {x:spacing, y:-spacing, z:0},
+  {x:spacing, y:-2*spacing, z:0},
+  {x:N, y:1},
+  {x:spacing, y:spacing, z:0},
   true // transpose
   );
 
 
+// shards
+let shards = arr2dInit(N, N);
 
 // device boxes
 let devices = arr2dInit(device_posns.length, device_posns[0].length);
@@ -151,55 +153,45 @@ for(let i = 0; i < device_posns.length; i++) {
   }
 }
 
-// shards
-let shards = arr2dInit(N, N);
-for(let n = 0; n < N; n++) {
-  shards[n][n] = new Box(
-    sub3(shard_posns[N/2][0][0][n], {x: N * spacing/2, y:0, z:0}),
-    {x: N*spacing, y: spacing},
-    black, 1.0, scene);
-}
-
-// shard colors
-const clrs = [];
-for(let n = 0; n < N; n++) {
-  clrs.push(hsl_color(n / (N-1) * 4/5, 0.9, 0.5));
-}
-
-
-const x_delta = sub3(shard_posns[1][0][0][0], shard_posns[0][0][0][0]);
-const z_delta = {x:0, y:0, z:.1};
-
-// Edge condition: white blocks to mask R/L edge shards moving.
-let whiteblockL = new Box(add3(add3(device_posns[N-1][0], x_delta), z_delta),
-                          {x: (N+2)*spacing, y: (N+2)*spacing}, white, 1.0, scene);
-let whiteblockR = new Box(add3(sub3(device_posns[0][0], x_delta), z_delta),
-                          {x: (N+2)*spacing, y: (N+2)*spacing}, white, 1.0, scene);
-
-
-
 
 // Main Loop
 
 let pos, tmp;
 let t = 0.0
 
+t+=1*tick;
 
-t+=2*tick; // intro pause
 
 for(let n = 0; n < N; n++) {
-  shards[n][n].toColor(clrs[n], t, 2*tick);
+    shards[n][n] = new Box(
+      sub3(shard_posns[N/2][0][n][0], {x: N * spacing/2, y:0, z:0}),
+      {x: spacing, y: N*spacing},
+      black, 1.0, scene);
+}
+
+
+t+=2*tick;
+
+
+const clrs = [];
+for(let n = 0; n < N; n++) {
+  clrs.push(hsl_color(n / (N-1) * 4/5, 0.9, 0.5));
+}
+
+for(let n = 0; n < N; n++) {
+  shards[n][n].toColor(clrs[n], t);
 }
 
 t+=4*tick;
 
 for(let n = 0; n < N; n++) {
-  shards[n][n].toPosition(shard_posns[n][0][0][n], t, 4*tick);
-  devices[n][0].toOpacity(1.0, t, 4*tick);
+  shards[n][n].toPosition(shard_posns[n][0][n][0], t);
+  devices[n][0].toOpacity(1.0, t);
 }
 
-t+=6*tick;
+t+=4*tick;
 
+let x_delta = sub3(shard_posns[1][0][0][0], shard_posns[0][0][0][0]);
 
 for(let p = 0; p < N/2; p++) {
 
@@ -207,36 +199,30 @@ for(let p = 0; p < N/2; p++) {
     let fwd = mod(n + 1, N);
     let last = mod(n - p, N);
     if(n != N-1) {
-      // shards[fwd][last] = shards[n][last].clone().replay().toPosition(shard_posns[fwd][0][0][last], t, 4*tick).toVisible(t);//.toOpacity(1.0, t);
-      shards[fwd][last] = shards[n][last].clone(true, t).toPosition(shard_posns[fwd][0][0][last], t, 4*tick);//.toOpacity(1.0, t);
+      shards[fwd][last] = shards[n][last].clone().replay().toPosition(shard_posns[fwd][0][last][0], t, 4*tick).toOpacity(1.0, t);
     }
     else {
-      pos = add3(shard_posns[n][0][0][last], x_delta);
-      // tmp = shards[n][last].clone().replay().toVisible(t).toPosition(pos, t, 4*tick).toVisible(t);//.toOpacity(0.0, t, 2*tick);
-      tmp = shards[n][last].clone(true, t).toPosition(pos, t, 4*tick);//.toOpacity(0.0, t, 2*tick);
-      pos = sub3(shard_posns[fwd][0][0][last], x_delta);
-      // shards[fwd][last] = shards[n][last].clone().replay().toPosition(pos, t, 0.0).toPosition(shard_posns[fwd][0][0][last], t, 4*tick).toVisible(t)//;, 2*tick);
-      shards[fwd][last] = shards[n][last].clone(true, t).toPosition(pos, t, 0.0).toPosition(shard_posns[fwd][0][0][last], t, 4*tick);
+      pos = add3(shard_posns[n][0][last][0], x_delta);
+      tmp = shards[n][last].clone().replay().toVisible(t).toPosition(pos, t, 4*tick).toOpacity(0.0, t, 2*tick);
+      pos = sub3(shard_posns[fwd][0][last][0], x_delta);
+      shards[fwd][last] = shards[n][last].clone().replay().toPosition(pos, t, 0.0).toPosition(shard_posns[fwd][0][last][0], t, 4*tick).toOpacity(1.0, t, 2*tick);
     }
   }
 
-  // t+=4*tick;
+  t+=4*tick;
 
   if( p != N/2-1) {
     for(let n = 0; n < N; n++) {
       let bwd = mod(n - 1, N);
       let last = mod(n + p, N);
       if(n != 0) {
-        // shards[bwd][last] = shards[n][last].clone().replay().toPosition(shard_posns[bwd][0][0][last], t, 4*tick).toVisible(t);//.toOpacity(1.0, t);
-        shards[bwd][last] = shards[n][last].clone(true, t).toPosition(shard_posns[bwd][0][0][last], t, 4*tick);
+        shards[bwd][last] = shards[n][last].clone().replay().toPosition(shard_posns[bwd][0][last][0], t, 4*tick).toOpacity(1.0, t);
       }
       else {
-        pos = sub3(shard_posns[n][0][0][last], x_delta);
-        // tmp = shards[n][last].clone().replay().toVisible(t).toPosition(pos, t, 4*tick).toVisible(t);//.toOpacity(0.0, t, 2*tick);
-        tmp = shards[n][last].clone(true, t).toPosition(pos, t, 4*tick).toVisible(t);
-        pos = add3(shard_posns[bwd][0][0][last], x_delta);
-        // shards[bwd][last] = shards[n][last].clone().replay().toPosition(pos, t, 0.0).toPosition(shard_posns[bwd][0][0][last], t, 4*tick).toVisible(t);//.toOpacity(1.0, t, 2*tick);
-        shards[bwd][last] = shards[n][last].clone(true, t).toPosition(pos, t, 0.0).toPosition(shard_posns[bwd][0][0][last], t, 4*tick);
+        pos = sub3(shard_posns[n][0][last][0], x_delta);
+        tmp = shards[n][last].clone().replay().toVisible(t).toPosition(pos, t, 4*tick).toOpacity(0.0, t, 2*tick);
+        pos = add3(shard_posns[bwd][0][last][0], x_delta);
+        shards[bwd][last] = shards[n][last].clone().replay().toPosition(pos, t, 0.0).toPosition(shard_posns[bwd][0][last][0], t, 4*tick).toOpacity(1.0, t, 2*tick);
       }
     }
 

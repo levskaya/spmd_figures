@@ -42,24 +42,20 @@ export class Box {
       this.mesh = new THREE.Mesh( this.geometry, this.material);
       this.mesh.position.x = position.x;
       this.mesh.position.y = position.y;
-      this.mesh.position.z = 0.0;
+      this.mesh.position.z = position.z;
       this.timeline = gsap.timeline();
       this.cloned_animations = cloned_animations;
       this.animations = [];
       this.scene = scene;
-      if(scene) {
+      if(scene !== null) {
           scene.add(this.mesh);
       }
     }
-  replay(){
-    for(let i = 0; i < this.cloned_animations.length; i++){
-      this.cloned_animations[i](this);
-    }
-    return this;
-  }
-  addToScene(scene) {
-      scene.add(this.mesh);
-  }
+  // addToScene(scene) {
+  //     console.log(scene);
+  //     this.scene = scene;
+  //     scene.add(this.mesh);
+  // }
   // getter/setter
   get position() {
       return this.mesh.position;
@@ -83,27 +79,33 @@ export class Box {
       this.mesh.material.opacity = opa;
   }
   // cloning
-  clone(hide=true){
-      const box = new Box(this.position, this.size, this.color, this.opacity, this.scene, this.animations);
-      if(hide) box.opacity = 0.0;
+  clone(hide=true, reveal_time=null){
+      // const box = new Box(this.position, this.size, this.color, this.opacity, this.scene, this.animations);
+      // if(hide) box.opacity = 0.0;
+      let scene = hide ? null : this.scene;
+      const box = new Box(this.position, this.size, this.color, this.opacity, scene, this.animations);
+      box.scene = this.scene;
+      if (hide && reveal_time != null) {
+        box.replay();
+        box.toScene(this.scene, reveal_time);
+      }
       return box
+  }
+  replay(){
+    for(let i = 0; i < this.cloned_animations.length; i++){
+      this.cloned_animations[i](this);
+    }
+    return this;
+  }
+  toScene(scene, t) {
+    this.timeline.call(scene => scene.add(this.mesh), [scene], t);
+    return this;
   }
   // tweening
   toPosition(posn, t, d=null) {
-    // if(d){
-    //   let update = {...posn, duration: d};
-    // }
-    // else{
-    //   let update = posn;
-    // }
-    // if(d){
     this.timeline.to(this.mesh.position, d!==null ? {...posn, duration: d} : posn, t);
-    // }
-    // else{
-      // this.timeline.to(this.mesh.position, posn, t);
-    // }
-      this.animations.push( (x) => x.toPosition(posn, t, d) );
-      return this;
+    this.animations.push( (x) => x.toPosition(posn, t, d) );
+    return this;
   }
   toColor(clr, t, d=null) {
       this.timeline.to(this.mesh.material.color, d!==null ? {...clr, duration: d} : clr, t);
