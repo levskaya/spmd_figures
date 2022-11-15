@@ -51,11 +51,6 @@ export class Box {
           scene.add(this.mesh);
       }
     }
-  // addToScene(scene) {
-  //     console.log(scene);
-  //     this.scene = scene;
-  //     scene.add(this.mesh);
-  // }
   // getter/setter
   get position() {
       return this.mesh.position;
@@ -80,8 +75,6 @@ export class Box {
   }
   // cloning
   clone(hide=true, reveal_time=null){
-      // const box = new Box(this.position, this.size, this.color, this.opacity, this.scene, this.animations);
-      // if(hide) box.opacity = 0.0;
       let scene = hide ? null : this.scene;
       const box = new Box(this.position, this.size, this.color, this.opacity, scene, this.animations);
       box.scene = this.scene;
@@ -303,8 +296,8 @@ export class Label {
 	  this.timeline.to(this.textDiv.style.color, hexclr, t);
 	  return this;
   }
-  toOpacity(opacity, t) {
-      this.timeline.to(this.textDiv.style, {opacity: opacity}, t);
+  toOpacity(opacity, t, d=null) {
+      this.timeline.to(this.textDiv.style, d!==null ? {opacity: opacity, duration:d} : {opacity: opacity}, t);
       return this;
   }
   toHide(t){
