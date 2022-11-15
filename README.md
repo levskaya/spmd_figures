@@ -21,5 +21,4 @@
  - matmul_anim - matmuls cost 2 * p * n * m animation
     - still messing with both CSS and WebGL text rendering
     - katex support feels like overkill maybe?  easy to do though.
-
-
+ - allgather_anim - 1D allgather animation
