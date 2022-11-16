@@ -3,22 +3,15 @@
 - `three/addons` files used in threejs examples live in `examples/jsm` repo directory
 - json-exported font paths live in repo direcotry `examples/fonts`
 
-## demos
-
- - demo_box - three js spinning box demo
- - demo_text - three js text rendering demo
-
-## trials
-
- - rectangle_anim - trivial rectangle animation
- - grid_layout - just a grid drawing
- - grid_anim_three - simple use of modern three js animation clip / keyframe track system
- - grid_anim_tween - simple use of tween.js to animate... it's a bit underwhelming, chaining is wonky.
- - grid_anim_tween - simple use of gsap to animate... much better
-
  ## animations
+
+Ignore most directories for now, focus on these:
+
+To view, run `python -m http.server 8000` from the repo root:
 
  - matmul_anim - matmuls cost 2 * p * n * m animation
     - still messing with both CSS and WebGL text rendering
     - katex support feels like overkill maybe?  easy to do though.
  - allgather_anim - 1D allgather animation
+ - reducescatter_anim - 1D reduce scatter animation
+
