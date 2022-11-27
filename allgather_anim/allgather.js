@@ -1,9 +1,7 @@
 import * as THREE from 'three';
-import { FontLoader } from './FontLoader.js';
-import { CSS2DRenderer, CSS2DObject } from './CSS2DRenderer.js';
-import { gsap } from './gsap/all.js';
-import { simple_mat, Box, makeGrid, Text, Label} from './boxpusher.js';
-import * as _ from 'lodash';
+import { CSS2DRenderer } from '/libs/CSS2DRenderer.js';
+import { Box, Text, Label } from './boxpusher.js';
+
 
 window.THREE = THREE;
 

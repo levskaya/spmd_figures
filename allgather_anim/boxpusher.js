@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { FontLoader } from './FontLoader.js';
-import { CSS2DRenderer, CSS2DObject } from './CSS2DRenderer.js';
-import { gsap } from './gsap/all.js';
+import { FontLoader } from '/libs/FontLoader.js';
+import { CSS2DObject } from '/libs/CSS2DRenderer.js';
+import { gsap } from '/libs/gsap/all.js';
 import renderMathInElement from 'katexautorender';
 
 
@@ -160,7 +160,7 @@ export function makeGrid(origin, num, delta, size, clr=grey, opacity=1.0, scene=
 // Native Text / Font handling.
 
 const loader = new FontLoader();
-export const font = await loader.loadAsync('./helvetiker_regular.typeface.json');
+export const font = await loader.loadAsync('/fonts/helvetiker_regular.typeface.json');
 
 export class Text {
     constructor(position, text, size, color, opacity=0.0, scene=null) {
