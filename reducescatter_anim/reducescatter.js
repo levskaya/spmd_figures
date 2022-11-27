@@ -74,7 +74,7 @@ let tick = 0.3;
 
 // Number of shards / Number of devices
 // we assume an even number
-const N = 4;
+const N = 8;
 
 // grid spacing
 const spacing = 0.125;
@@ -192,9 +192,9 @@ let disappearing_box, left_boundary, right_boundary;
 let t = 0.0;
 
 
-// caption.toText("Reduce Scatter", t).toOpacity(1.0, t, 4*tick);
+caption.toText("Reduce Scatter", t).toOpacity(1.0, t, 4*tick);
 
-// t+=8*tick; caption.toText("we have an array", t).toOpacity(1.0, t, 4*tick);
+// t+=8*tick; caption.toText("we have an set of arrays", t).toOpacity(1.0, t, 4*tick);
 
 t+=2*tick;
 
