@@ -1,7 +1,5 @@
 ## animations
 
-Ignore most directories for now, focus on these:
-
 To view, run `python -m http.server 8000` from the repo root:
 
  - matmul_anim - matmuls cost 2 * p * n * m animation
