@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CSS2DRenderer } from '/libs/CSS2DRenderer.js';
+import { CSS2DRenderer } from '/libs/three/CSS2DRenderer.js';
 import { Box, Text, Label } from './boxpusher.js';
 
 

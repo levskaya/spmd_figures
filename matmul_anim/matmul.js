@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CSS2DRenderer } from '/libs/CSS2DRenderer.js';
+import { CSS2DRenderer } from '/libs/three/CSS2DRenderer.js';
 import { makeGrid, Text, Label } from './boxpusher.js';
 
 window.THREE = THREE;
@@ -21,7 +21,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(white);
 
 // Cameras
-const frustumSize = 3;
+const frustumSize = 3.5;
 const aspect = window.innerWidth / window.innerHeight;
 const camera = new THREE.OrthographicCamera(
     /*left*/   frustumSize * aspect / - 2,
@@ -61,11 +61,11 @@ const size = 0.1;
 const delta = 0.025;
 const spacing = size + delta;
 // origins
-const A_origin = {x: -1, y: (P-N)*spacing};
-const B_origin = {x: 0, y: 0};
-const C_origin = {x: 1, y: (P-N)*spacing};
-const col_origin = {x: -0.5, y: 1.25};
-const caption_origin = {x: 0.5, y: 1};
+const A_origin = {x: -1.25, y: (P-N)*spacing};
+const B_origin = {x: A_origin.x + 1, y: 0};
+const C_origin = {x: A_origin.x + 2, y: (P-N)*spacing};
+const col_origin = {x: A_origin.x + 0.5, y: 1.25};
+const caption_origin = {x: A_origin.x + 1.5, y: 1};
 
 // Matrix grids
 let As = makeGrid(A_origin, {x:P, y:N}, {x:spacing, y:spacing}, {x:size, y:size}, teal, 1.0, scene);

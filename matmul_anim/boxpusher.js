@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { FontLoader } from '/libs/FontLoader.js';
-import { CSS2DObject } from '/libs/CSS2DRenderer.js';
+import { FontLoader } from '/libs/three/FontLoader.js';
+import { CSS2DObject } from '/libs/three/CSS2DRenderer.js';
 import { gsap } from '/libs/gsap/all.js';
 import renderMathInElement from 'katexautorender';
 
