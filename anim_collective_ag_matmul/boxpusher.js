@@ -17,7 +17,7 @@ export function simple_mat(color, opacity) {
 
 export class Box {
     constructor(position, size, color, opacity=0.0, scene=null, cloned_animations=null) {
-      // Manually construct non-centered geometry.
+      // Manually construct *non-centered* geometry.
       // same as THREE.PlaneGeometry(size.x, size.y, 1, 1)
       this.geometry = new THREE.BufferGeometry();
       this.geometry.parameters = {width: size.x, height: size.y};
@@ -138,24 +138,6 @@ export class Box {
       return this;
     }
 }
-
-// grid helpers
-export function arr2dInit(nx, ny) {
-    return new Array(nx).fill(null).map(() => new Array(ny).fill(null));
-}
-
-export function makeGrid(origin, num, delta, size, clr=grey, opacity=1.0, scene=null) {
-    let boxes = arr2dInit(num.x, num.y);
-    for(let i = 0; i < num.x; i++) {
-        for(let j = 0; j < num.y; j++) {
-            let posn = {x: origin.x + i * delta.x,
-                        y: origin.y + (num.y - j) * delta.y};
-            boxes[i][j] = new Box(posn, size, clr, opacity, scene);
-        }
-    }
-    return boxes
-}
-
 
 // Native Text / Font handling.
 

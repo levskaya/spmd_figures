@@ -1,3 +1,30 @@
+// Perspective
+const camera = new THREE.PerspectiveCamera(
+	/*fov*/    70,
+	/*aspect*/ aspect,
+	/*near*/   0.01,
+	/*far*/    10);
+// camera.position.z = 1;
+camera.position.set( 0, 0, 10 );
+camera.lookAt(0,0,0);
+
+
+// export function map(mapfn, arr){
+//   function _map(mapfn, idx, val){
+//     if(Array.isArray(val)) {
+//       let newval = []
+//       for(let i=0; i<val.length; i++){
+//         newval.push(_map(mapfn, [...idx, i], val[i]));
+//       }
+//       return newval;
+//     } else {
+//       return mapfn(idx, val);
+//     }
+//   }
+//   return _map(mapfn, [], arr);
+// }
+
+
 const geometry = new THREE.BufferGeometry();
 const vertices = new Float32Array( [
 	-1.0, -1.0,  -1.0,
