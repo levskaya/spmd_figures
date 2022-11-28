@@ -1,21 +1,41 @@
-export function init(shape, val) {
-    if(shape.length === 1) {
-      return new Array(shape[0]).fill(val);
-    } else {
-      return new Array(shape[0]).fill(null).map(() => init(shape.slice(1), val));
-    }
+
+// Utils
+const v3 = (x,y,z) => new THREE.Vector3(x,y,z);
+
+// basic vector math
+export const mod = (n, m) => ((n % m) + m) % m;
+export const sub3 = (a, b) => ({x: a.x - b.x, y: a.y - b.y, z: a.z - b.z});
+export const mul3 = (a, b) => ({x: a.x * b.x, y: a.y * b.y, z: a.z * b.z});
+export const div3 = (a, b) => ({x: a.x / b.x, y: a.y / b.y, z: a.z / b.z});
+export const scalar3 = (s, a) => ({x: s * a.x, y: s * a.y, z: s * a.z});
+export const neg3 = (a) => ({x: -a.x, y: -a.y, z: -a.z});
+
+// const add3 = (a, b) => ({x: a.x + b.x, y: a.y + b.y, z: a.z + b.z});
+export function add3(...vs){
+  if(vs.length === 1){
+    return {x: vs[0].x , y: vs[0].y, z: vs[0].z};
+  } else {
+    const accum = add3(...vs.slice(1));
+    return {x: vs[0].x + accum.x, y: vs[0].y + accum.y, z: vs[0].z + accum.z}
   }
-
-export function empty(shape) {
-  return init(shape, null);
 }
 
-export function zeros(shape) {
-  return init(shape, 0.0);
+// regular array of object helpers
+
+// bare array inits
+export function _init(shape, val) {
+  if(shape.length === 0) {
+    return val;
+  }
+  else if(shape.length === 1) {
+    return new Array(shape[0]).fill(val);
+  } else {
+    return new Array(shape[0]).fill(null).map(() => _init(shape.slice(1), val));
+  }
 }
 
-export function ones(shape) {
-  return init(shape, 1.0);
+export function _empty(shape) {
+  return _init(shape, null);
 }
 
 export function ndim(arr) {
@@ -56,10 +76,8 @@ export function squeeze(arr) {
   }
 }
 
-
-const isArray = x => Array.isArray(x);
-
 function map_impl(mapfn, idx, ...vals){
+  const isArray = x => Array.isArray(x);
   if(vals.some(isArray)) {
     let out = [];
     const length = vals.find(isArray).length;
@@ -92,15 +110,11 @@ export function fromArray(arr) {
   return new_nd;
 }
 
-const add3 = (a, b) => ({x: a.x + b.x, y: a.y + b.y, z: a.z + b.z});
-const mul3 = (a, b) => ({x: a.x * b.x, y: a.y * b.y, z: a.z * b.z});
-const smul3 = (s, a) => ({x: s * a.x, y: s * a.y, z: s * a.z});
-
 export class ndArray {
   constructor(shape) {
     this.shape = shape;
     this.ndim = shape.length;
-    this.arr = empty(shape);
+    this.arr = _empty(shape);
   }
   map(fn) {
     return fromArray(map(fn, this.arr));
@@ -121,8 +135,8 @@ export class ndArray {
     return fromArray(squeeze(this.arr));
   }
   // vec3 specific
-  smul3(v) {
-    return this.map(x => smul3(v, x));
+  scalar3(v) {
+    return this.map(x => scalar3(v, x));
   }
   mul3(v) {
     return this.map(x => mul3(v, x));
@@ -130,4 +144,21 @@ export class ndArray {
   add3(v) {
     return this.map(x => add3(v, x));
   }
+}
+
+// ndArray inits
+export function init(shape, val) {
+  return fromArray(_init(shape, val));
+}
+
+export function empty(shape) {
+  return init(shape, null);
+}
+
+export function zeros(shape) {
+  return init(shape, 0.0);
+}
+
+export function ones(shape) {
+  return init(shape, 1.0);
 }
