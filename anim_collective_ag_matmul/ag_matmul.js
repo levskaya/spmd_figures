@@ -47,7 +47,7 @@ document.body.appendChild( labelRenderer.domElement );
 const N = 4;
 
 // Cameras
-const frustumSize = 2 * N;
+const frustumSize = 3 * N;
 const aspect = window.innerWidth / window.innerHeight;
 // Orthographic
 const camera = new THREE.OrthographicCamera(
@@ -69,7 +69,7 @@ const devSpacingV = {x: devSpacing, y: devSpacing, z: devSpacing};
 const devSizeV = {x: devSize, y: devSize, z: devSize};
 
 // origin
-const grid_origin = {x: -N * N * spacing / 2 - 3 * N * spacing, y: devSpacing, z: 0.0};
+const grid_origin = {x: -N * N * spacing / 2 - 4 * N * spacing, y: devSpacing, z: 0.0};
 
 // unit vectors
 const DX = {x: devSpacing, y:0, z: 0};
@@ -81,7 +81,7 @@ const dz = {x:0, y:0, z: spacing};
 const down_y = scalar3(-2, dy);
 
 
-
+// unsharded positions
 const p_grid0 = nd.empty([N, N])
                  .indexMap( ([i, j]) => ({x: j, y: i, z: 0}) )
                  .add3({x: 0, y: 5, z: 0})
@@ -95,7 +95,7 @@ const a_grid0 = nd.empty([N])
                   .add3({x: N+5, y: N+4, z: 0})
                   .scalar3(spacing).arr;
 
-
+// sharded positions
 const device_grid = nd.empty([N, 1])
                       .indexMap( ([i, j]) => ({x: i, y: j, z: 0}) )
                       .scalar3(devSpacing)
@@ -123,14 +123,19 @@ const left_boundary = add3(q_posns[0], down_y, neg3(DX));
 
 // devices
 let devices = nd.map(val => new Box(val, devSizeV, grey, 0.0, scene), device_posns);
-// console.log(devices);
 
 // Edge condition: white blocks to mask R/L edge shards moving.
-let whiteblockL = new Box(add3(device_posns[N-1][0], DX, dz), devSpacingV, white, 1.0, scene);
-let whiteblockR = new Box(add3(device_posns[0][0], neg3(DX), dz), devSpacingV, white, 1.0, scene);
+let maskL = new Box(add3(device_posns[N-1][0], DX, dz), devSpacingV, white, 1.0, scene);
+let maskR = new Box(add3(device_posns[0][0], neg3(DX), dz), devSpacingV, white, 1.0, scene);
+
+const multiply_0 = new Text(add3(q_grid0[N/2], scalar3(-1.2, dx), scalar3(-0.8, dy)), "*", 0.2, black, 1.0, scene);
+const equals_0 = new Text(add3(q_grid0[N/2], scalar3(2, dx), scalar3(-0.4, dy)), "=", 0.2, black, 0.0, scene);
+
+const multiplies = q_posns.map(v => new Text(add3(v, scalar3(-0.6, dx), scalar3(-0.8, dy)), "*", 0.1, black, 0.0, scene));
+const plusses = a_posns.map(v => new Text(add3(v, scalar3(-0.6, dx), scalar3(-0.5, dy)), "+", 0.1, black, 0.0, scene));
 
 // P, Q arrays and accumulator A
-let Ps = nd.map(val => new Box(val, box_size, purple, 0.1, scene), p_grid0);
+let Ps = nd.map(val => new Box(val, box_size, purple, 1.0, scene), p_grid0);
 let Qs = nd.map(val => new Box(val, box_size, green, 1.0, scene), q_grid0);
 let As = nd.map(val => new Box(val, box_size, teal, 0.0, scene), a_grid0);
 
@@ -139,15 +144,19 @@ let movingPs = nd.empty([N]).arr;
 
 // Main Animation
 
-const tick = 0.3;
+const tick = 0.4;
 let t = 0.0;
 
 t+=6*tick;
+multiply_0.toOpacity(0.0, t, 6*tick);
 for(let i = 0; i < N; i++) {
+  // fade-in device boxes.
   devices[i][0].toOpacity(0.0, t, 0.0).toOpacity(1.0, t, 6*tick);
+  // initial view of unsharded P, Q --> move to sharded view.
   for(let j = 0; j < N; j++) {
     Ps[i][j].toPosition(p_grid0[i][j], t, 0.0)
-            .toPosition(p_posns[i][j], t, 6*tick);
+            .toPosition(p_posns[i][j], t, 6*tick)
+            .toOpacity(0.1, t, 6*tick);
   }
   Qs[i].toPosition(q_grid0[i], t, 0.0)
        .toPosition(q_posns[i], t, 6*tick);
@@ -171,8 +180,9 @@ for(let step = 0; step < N; step++) {
   for(let i = 0; i < N; i++) {
     let idx = mod(i + step, N);
     movingPs[i] = Ps[i][idx].clone(true, t)
-                            .toPosition(sub3(q_posns[i], dx), t);
+                            .toPosition(sub3(q_posns[i], scalar3(2, dx)), t);
     Ps[i][idx].toOpacity(0.1, t, 0.0);
+    multiplies[i].toOpacity(1.0, t, tick+tick).toOpacity(0.0, t+2*tick);
     if(step != N-1) {
       movingQs[i] = Qs[i].clone(true, t)
                          .toPosition(add3(q_posns[i], down_y), t);
@@ -181,18 +191,22 @@ for(let step = 0; step < N; step++) {
 
   t+=2*tick;
 
-  let einsum_dur = 4*tick;
+  const einsum_dur = 4*tick;
   // P * Q einsum
   for(let i = 0; i < N; i++) {
     Qs[i].toColor(teal, t, tick);
-    if(step != N-1){
-      Qs[i].toOpacity(0.0, t+tick, 0.0);
-    } else {
-      Qs[i].toColor(green, t+tick, 0.0);
-    }
+    // if(step != N-1){
+    Qs[i].toOpacity(0.0, t+tick, 0.0);
+    // } else {
+      // Qs[i].toColor(green, t+tick, 0.0);
+    // }
     movingPs[i].toPosition(q_posns[i], t, tick)
                .toColor(teal, t, tick)
+               .toPosition(add3(a_posns[i], scalar3(-2, dx)), t+einsum_dur-2*tick)
                .toPosition(a_posns[i], t+einsum_dur);
+    if(step != 0) {
+      plusses[i].toOpacity(1.0, t, t+einsum_dur-tick).toOpacity(0.0, t+einsum_dur);
+    }
   }
 
   // collective permute (roll) of Q copy
@@ -231,18 +245,26 @@ for(let i = 0; i < N; i++) {
   devices[i][0].toOpacity(0.0, t, 6*tick);
   movingQs[i].toOpacity(0.0, t, 0.0);
   movingPs[i].toOpacity(0.0, t, 0.0);
-  // for(let j = 0; j < N; j++) {
-  //   Ps[i][j].toOpacity(0.0, t, 6*tick);
-  // }
-  // Qs[i].toOpacity(0.0, t, 6*tick);
   for(let j = 0; j < N; j++) {
-    Ps[i][j].toPosition(p_grid0[i][j], t, 6*tick);
+    Ps[i][j].toOpacity(0.0, t, tick);
   }
-  Qs[i].toPosition(q_grid0[i], t, 6*tick);
-  As[i].toPosition(a_grid0[i], t, 6*tick);
+  Qs[i].toOpacity(0.0, t, tick);
+  for(let j = 0; j < N; j++) {
+    Ps[i][j].toPosition(p_grid0[i][j], t+tick, 6*tick);
+  }
+  Qs[i].toPosition(q_grid0[i], t+tick, 6*tick);
+  As[i].toPosition(a_grid0[i], t+tick, 6*tick);
 }
 t+=6*tick;
 
+multiply_0.toOpacity(1.0, t, tick);
+equals_0.toOpacity(1.0, t, tick);
+for(let i = 0; i < N; i++) {
+  for(let j = 0; j < N; j++) {
+    Ps[i][j].toOpacity(1.0, t, tick);
+  }
+  Qs[i].toColor(green, t, 0.0).toOpacity(1.0, t, tick);
+}
 
 
 // Animation Loop
