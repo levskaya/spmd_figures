@@ -135,14 +135,15 @@ function push_packets(boxes, start, end, t0, tick, tick_skew=null) {
       let x1 = x0.add3({x:0, y: delta.arr.y/2.0, z:0}).arr;
       let x2 = x0.add3({x:delta.arr.x, y: delta.arr.y/2.0, z:0}).arr;
       let x3 = nd.fromArray(grid1[i][j]).arr;
-      boxes[i][j].toPosition(x1, t + tick, );
-      boxes[i][j].toPosition(x2, t + tick * 2);
-      boxes[i][j].toPosition(x3, t + tick * 3);
+      boxes[i][j].toPosition(x1, t + tick, tick);
+      boxes[i][j].toPosition(x2, t + tick * 2, tick);
+      boxes[i][j].toPosition(x3, t + tick * 3, tick);
       t += tick_skew;
     }
   }
-  return boxes[shape[0]-1][shape[1]-1].timeline.endTime();
-  //return t;
+  return t;
+  // add delay until last box movement has finished.
+  //return boxes[shape[0]-1][shape[1]-1].timeline.endTime();
 }
 
 
@@ -156,11 +157,10 @@ let Z1s = make_boxes(vector_core, blue, 0.0);
 
 
 // Main Animation
-let tick = 0.2;
-let hbm_tick = 1.5*tick;
-let vmem_tick = 0.5 * tick;
-let vpu_tick = 0.25 * tick;
-
+let tick = 0.1;
+let hbm_tick = 3 * tick;
+let vmem_tick = 1 * tick;
+let vpu_tick = 0.5 * tick;
 
 let t0 = 0.0;
 let t1 = push_packets(X0s, x0_hbm, x0_vmem, t0, hbm_tick);
@@ -174,6 +174,7 @@ let t6 = push_packets(Y0s, y0_vmem, y_vreg, t5, vmem_tick);
 let t7 = push_packets(X0s, x_vreg, vector_core, t6, vpu_tick);
          push_packets(Y0s, y_vreg, vector_core, t6, vpu_tick);
 
+// hide green/red, reveal blue
 nd.map((b) => b.toOpacity(0.0, t7, tick*0.1), X0s);
 nd.map((b) => b.toOpacity(0.0, t7, tick*0.1), Y0s);
 nd.map((b) => b.toOpacity(1.0, t7, tick*0.1), Z0s);
@@ -182,12 +183,12 @@ let t8 = push_packets(Z0s, vector_core, z_vreg, t7, vpu_tick);
 let t9 = push_packets(Z0s, z_vreg, z0_vmem, t8, vpu_tick);
 let t10 = push_packets(Z0s, z0_vmem, z0_hbm, Math.max(t9, t4), hbm_tick);
 
-
 let t11 = push_packets(X1s, x1_vmem, x_vreg, Math.max(t3, t9), vmem_tick);
 let t12 = push_packets(Y1s, y1_vmem, y_vreg, Math.max(t11, t4), vmem_tick);
 let t13 = push_packets(X1s, x_vreg, vector_core, t12, vpu_tick);
           push_packets(Y1s, y_vreg, vector_core, t12, vpu_tick);
 
+// hide green/red, reveal blue
 nd.map((b) => b.toOpacity(0.0, t13, tick*0.1), X1s);
 nd.map((b) => b.toOpacity(0.0, t13, tick*0.1), Y1s);
 nd.map((b) => b.toOpacity(1.0, t13, tick*0.1), Z1s);
@@ -196,18 +197,17 @@ let t14 = push_packets(Z1s, vector_core, z_vreg, t13, vpu_tick);
 let t15 = push_packets(Z1s, z_vreg, z1_vmem, t14, vpu_tick);
 let t16 = push_packets(Z1s, z1_vmem, z1_hbm, Math.max(t15, t10), hbm_tick);
 
-gsap.globalTimeline.seek(0);
-gsap.globalTimeline.pause();
-
-// window.gsap=gsap;
-
-
 // Animation Loop
 function animation(time) {
     renderer.render( scene, camera );
     labelRenderer.render( scene, camera );
 }
 renderer.setAnimationLoop(animation);
+
+// halt at start
+// gsap.globalTimeline.seek(0);
+// gsap.globalTimeline.pause();
+window.gsap = gsap;
 
 
 // record via screencapture
@@ -239,21 +239,19 @@ function startRecording(stream, lengthInMS) {
   return Promise.all([stopped, recorded]).then(() => data);
 }
 
-
 const capture = () => {
-
+  // reset animation state, pause until screen capture clickthrough.
   gsap.globalTimeline.seek(0);
   gsap.globalTimeline.pause();
-  const options = {
-    audio: false,
-    preferCurrentTab: true,
-    displaySurface: "window",
-
+  // capture options
+  const getDisplayMediaOptions = {
+    audio: false,             // no audio stream
+    preferCurrentTab: true,   // pick this tab
+    displaySurface: "window", // only do window capture
   };
-  navigator.mediaDevices.getDisplayMedia(options).then((stream) => {
+  navigator.mediaDevices.getDisplayMedia(getDisplayMediaOptions).then((stream) => {
     // get duration of root gsap timeline (total length of scheduled animations)
     const finalTime = 1.0;//gsap.globalTimeline.endTime();
-    // console.log(`Beginning recording of ${finalTime} seconds.`);
     return startRecording(stream, finalTime * 1000 + 500);
   })
   .then((recordedChunks) => {
@@ -270,5 +268,14 @@ const capture = () => {
 }
 
 document.getElementById("captureButton").addEventListener("click", capture, false);
+
+// lol half-broken due to poor re-init of opacity/color
+document.getElementById("timeSlider").addEventListener("input", (event) => {
+  gsap.globalTimeline.pause();
+  const finalTime = gsap.globalTimeline.endTime();
+  const maxVal = event.target.max;
+  const val = (event.target.value/maxVal) * finalTime;
+  gsap.globalTimeline.seek(val);
+});
 
 window.capture=capture;

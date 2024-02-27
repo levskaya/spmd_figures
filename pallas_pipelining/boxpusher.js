@@ -31,7 +31,7 @@ export class Box {
           vertices.push( x, - y, 0 );
           normals.push( 0, 0, 1 );
           uvs.push(ix);
-  				uvs.push(1 - iy);
+  		  uvs.push(1 - iy);
          }
       }
       this.geometry.setIndex([0, 2, 1, 2, 3, 1]);
@@ -50,6 +50,8 @@ export class Box {
       if(scene !== null) {
           scene.add(this.mesh);
       }
+      this.toColor(color, 0, 0);
+      this.toOpacity(opacity, 0, 0);
     }
   // getter/setter
   get position() {
