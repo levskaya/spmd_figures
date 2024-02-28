@@ -50,8 +50,6 @@ export class Box {
       if(scene !== null) {
           scene.add(this.mesh);
       }
-      this.toColor(color, 0, 0);
-      this.toOpacity(opacity, 0, 0);
     }
   // getter/setter
   get position() {

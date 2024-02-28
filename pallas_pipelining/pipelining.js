@@ -5,7 +5,9 @@ import * as nd from './nd.js';
 import { mod, neg3, add3, sub3, scalar3 } from './nd.js';
 import { gsap } from '/libs/gsap/all.js';
 
+// debug
 window.THREE = THREE;
+window.gsap = gsap;
 
 // Colors
 const teal = new THREE.Color(0, 0.86, 0.99);
@@ -204,10 +206,13 @@ function animation(time) {
 }
 renderer.setAnimationLoop(animation);
 
+// by default, globalTimeline removes finished children animations, which
+// prevents us from seeking across the timeline correctly.
+gsap.globalTimeline.autoRemoveChildren = false;
+
 // halt at start
 // gsap.globalTimeline.seek(0);
 // gsap.globalTimeline.pause();
-window.gsap = gsap;
 
 
 // record via screencapture
@@ -251,12 +256,12 @@ const capture = () => {
   };
   navigator.mediaDevices.getDisplayMedia(getDisplayMediaOptions).then((stream) => {
     // get duration of root gsap timeline (total length of scheduled animations)
-    const finalTime = 1.0;//gsap.globalTimeline.endTime();
+    const finalTime = gsap.globalTimeline.endTime();
     return startRecording(stream, finalTime * 1000 + 500);
   })
   .then((recordedChunks) => {
     // let recordedBlob = new Blob(recordedChunks, { type: "video/webm" });
-    let recordedBlob = new Blob(recordedChunks, { type: "video/quicktime" });
+    let recordedBlob = new Blob(recordedChunks, { type: "video/mp4;codecs=avc1.4d002a" });
     downloadButton.href = URL.createObjectURL(recordedBlob);
     // downloadButton.download = "RecordedVideo.webm";
     downloadButton.download = "RecordedVideo.mp4";
@@ -269,9 +274,11 @@ const capture = () => {
 
 document.getElementById("captureButton").addEventListener("click", capture, false);
 
-// lol half-broken due to poor re-init of opacity/color
+
+// primitive timeline scroller
+
 document.getElementById("timeSlider").addEventListener("input", (event) => {
-  gsap.globalTimeline.pause();
+//  gsap.globalTimeline.pause();
   const finalTime = gsap.globalTimeline.endTime();
   const maxVal = event.target.max;
   const val = (event.target.value/maxVal) * finalTime;
