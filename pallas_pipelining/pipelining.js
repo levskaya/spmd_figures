@@ -249,3 +249,8 @@ document.getElementById("pauseButton").addEventListener("click", (event) => {
     gsap.globalTimeline.pause();
   }
 });
+
+// rewind
+document.getElementById("rewindButton").addEventListener("click", (event) => {
+  gsap.globalTimeline.seek(0);
+});
