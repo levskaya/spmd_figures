@@ -4,6 +4,7 @@ import { Box, Text, Label } from './boxpusher.js';
 import * as nd from './nd.js';
 import { mod, neg3, add3, sub3, scalar3 } from './nd.js';
 import { gsap } from '/libs/gsap/all.js';
+import { make_capture_handler } from './screen_capture.js';
 
 // debug
 window.THREE = THREE;
@@ -39,17 +40,19 @@ const WinW = 918.33;
 // WebGL Render
 const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
 renderer.setSize(WinW, WinH);
-//document.body.appendChild(renderer.domElement);
-document.getElementById("downloadControls").prepend( renderer.domElement );
+document.getElementById("canvas").appendChild( renderer.domElement );
 
 // CSS Element Render
 const labelRenderer = new CSS2DRenderer();
 labelRenderer.setSize(WinW, WinH);
 labelRenderer.domElement.style.position = 'absolute';
 labelRenderer.domElement.style.top = '0px';
-// document.body.appendChild( labelRenderer.domElement );
-document.getElementById("downloadControls").prepend( labelRenderer.domElement );
+document.getElementById("canvas").appendChild( labelRenderer.domElement );
 
+// GSAP Settings
+// by default, globalTimeline removes finished children animations, which
+// prevents us from seeking across the timeline correctly.
+gsap.globalTimeline.autoRemoveChildren = false;
 
 // Cameras
 // Orthographic
@@ -110,7 +113,7 @@ const z1_vmem = nd.add3(nd.scalar3(N + 0.5, dx), z_vmem);
 
 // grid positions
 function make_grid(origin) {
-  return nd.empty([4, 4])
+  return nd.empty([N, N])
     .indexMap( ([i, j]) => ({x: i, y: j, z: 0}) )
     .scalar3(spacing)
     .add3(origin).arr;
@@ -123,7 +126,12 @@ function make_boxes(origin, color, opacity=1.0) {
   make_grid(origin));
 }
 
-// shove packets along a path
+// shove packets along a path like:
+//                [end]
+//                  |
+//      ------------
+//      |
+//   [start]
 function push_packets(boxes, start, end, t0, tick, tick_skew=null) {
   tick_skew = tick_skew !== null ? tick_skew : tick;
   let t = t0;
@@ -190,7 +198,7 @@ let t12 = push_packets(Y1s, y1_vmem, y_vreg, Math.max(t11, t4 + 4*hbm_tick), vme
 let t13 = push_packets(X1s, x_vreg, vector_core, t12, vpu_tick);
           push_packets(Y1s, y_vreg, vector_core, t12, vpu_tick);
 
-// hide green/red, reveal blue
+// hide green/red inputs, reveal blue outputs
 nd.map((b) => b.toOpacity(0.0, t13, tick*0.1), X1s);
 nd.map((b) => b.toOpacity(0.0, t13, tick*0.1), Y1s);
 nd.map((b) => b.toOpacity(1.0, t13, tick*0.1), Z1s);
@@ -210,78 +218,23 @@ function animation(time) {
 }
 renderer.setAnimationLoop(animation);
 
-// by default, globalTimeline removes finished children animations, which
-// prevents us from seeking across the timeline correctly.
-gsap.globalTimeline.autoRemoveChildren = false;
-
 // halt at start
 // gsap.globalTimeline.seek(0);
 // gsap.globalTimeline.pause();
 
 
+// UI Actions
+// ------------------------------------------------------------------------------------------------
+
 // record via screencapture
-
-function wait(delayInMS) {
-  return new Promise((resolve) => setTimeout(resolve, delayInMS));
-}
-
-function startRecording(stream, lengthInMS) {
-  let recorder = new MediaRecorder(stream);
-  let data = [];
-
-  recorder.ondataavailable = (event) => data.push(event.data);
-  recorder.start();
-  console.log(`${recorder.state} for ${lengthInMS / 1000} seconds…`);
-
-  let stopped = new Promise((resolve, reject) => {
-    recorder.onstop = resolve;
-    recorder.onerror = (event) => reject(event.name);
-  });
-  let recorded = wait(lengthInMS).then(() => {
-    if (recorder.state === "recording") {
-      recorder.stop();
-    }
-  });
-
-  gsap.globalTimeline.play();
-
-  return Promise.all([stopped, recorded]).then(() => data);
-}
-
-const capture = () => {
-  // reset animation state, pause until screen capture clickthrough.
-  gsap.globalTimeline.seek(0);
-  gsap.globalTimeline.pause();
-  // capture options
-  const getDisplayMediaOptions = {
-    audio: false,             // no audio stream
-    preferCurrentTab: true,   // pick this tab
-    displaySurface: "window", // only do window capture
-  };
-  navigator.mediaDevices.getDisplayMedia(getDisplayMediaOptions).then((stream) => {
-    // use duration of root gsap timeline (total length of scheduled animations)
-    return startRecording(stream, finalTime * 1000 + 500);
-  })
-  .then((recordedChunks) => {
-    let recordedBlob = new Blob(recordedChunks, { type: "video/webm" });
-    // let recordedBlob = new Blob(recordedChunks, { type: "video/mp4;codecs=avc1.4d002a" });
-    downloadButton.href = URL.createObjectURL(recordedBlob);
-    downloadButton.download = "pallas_pipelining.webm";
-    // downloadButton.download = "pallas_pipelining.mp4";
-    console.log(
-      `Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`,
-    );
-  })
-  .catch((error) => { console.log(error); });
-}
-document.getElementById("captureButton").addEventListener("click", capture, false);
-
+document.getElementById("captureButton").addEventListener(
+  "click",
+  make_capture_handler(finalTime, "pallas_pipelining.webm", "video/webm"),
+  false
+)
 
 // primitive timeline scroller
-
 document.getElementById("timeSlider").addEventListener("input", (event) => {
-//  gsap.globalTimeline.pause();
-  // const finalTime = gsap.globalTimeline.endTime();
   const maxVal = event.target.max;
   const val = (event.target.value/maxVal) * finalTime;
   console.log(val, finalTime);
@@ -289,7 +242,6 @@ document.getElementById("timeSlider").addEventListener("input", (event) => {
 });
 
 // play / pause
-
 document.getElementById("pauseButton").addEventListener("click", (event) => {
   if(gsap.globalTimeline.paused()) {
     gsap.globalTimeline.play();
