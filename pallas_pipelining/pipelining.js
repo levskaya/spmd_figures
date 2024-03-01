@@ -185,8 +185,8 @@ let t8 = push_packets(Z0s, vector_core, z_vreg, t7, vpu_tick);
 let t9 = push_packets(Z0s, z_vreg, z0_vmem, t8, vpu_tick);
 let t10 = push_packets(Z0s, z0_vmem, z0_hbm, Math.max(t9, t4), hbm_tick);
 
-let t11 = push_packets(X1s, x1_vmem, x_vreg, Math.max(t3, t9), vmem_tick);
-let t12 = push_packets(Y1s, y1_vmem, y_vreg, Math.max(t11, t4), vmem_tick);
+let t11 = push_packets(X1s, x1_vmem, x_vreg, Math.max(t4, t9), vmem_tick);
+let t12 = push_packets(Y1s, y1_vmem, y_vreg, Math.max(t11, t4 + 4*hbm_tick), vmem_tick);
 let t13 = push_packets(X1s, x_vreg, vector_core, t12, vpu_tick);
           push_packets(Y1s, y_vreg, vector_core, t12, vpu_tick);
 
@@ -198,6 +198,10 @@ nd.map((b) => b.toOpacity(1.0, t13, tick*0.1), Z1s);
 let t14 = push_packets(Z1s, vector_core, z_vreg, t13, vpu_tick);
 let t15 = push_packets(Z1s, z_vreg, z1_vmem, t14, vpu_tick);
 let t16 = push_packets(Z1s, z1_vmem, z1_hbm, Math.max(t15, t10), hbm_tick);
+
+// duration of root gsap timeline (total length of scheduled animations)
+let finalTime = gsap.globalTimeline.endTime();
+console.log(`Animation lasts ${finalTime} seconds.`);
 
 // Animation Loop
 function animation(time) {
@@ -255,23 +259,21 @@ const capture = () => {
     displaySurface: "window", // only do window capture
   };
   navigator.mediaDevices.getDisplayMedia(getDisplayMediaOptions).then((stream) => {
-    // get duration of root gsap timeline (total length of scheduled animations)
-    const finalTime = gsap.globalTimeline.endTime();
+    // use duration of root gsap timeline (total length of scheduled animations)
     return startRecording(stream, finalTime * 1000 + 500);
   })
   .then((recordedChunks) => {
-    // let recordedBlob = new Blob(recordedChunks, { type: "video/webm" });
-    let recordedBlob = new Blob(recordedChunks, { type: "video/mp4;codecs=avc1.4d002a" });
+    let recordedBlob = new Blob(recordedChunks, { type: "video/webm" });
+    // let recordedBlob = new Blob(recordedChunks, { type: "video/mp4;codecs=avc1.4d002a" });
     downloadButton.href = URL.createObjectURL(recordedBlob);
-    // downloadButton.download = "RecordedVideo.webm";
-    downloadButton.download = "RecordedVideo.mp4";
+    downloadButton.download = "pallas_pipelining.webm";
+    // downloadButton.download = "pallas_pipelining.mp4";
     console.log(
       `Successfully recorded ${recordedBlob.size} bytes of ${recordedBlob.type} media.`,
     );
   })
   .catch((error) => { console.log(error); });
 }
-
 document.getElementById("captureButton").addEventListener("click", capture, false);
 
 
@@ -279,10 +281,19 @@ document.getElementById("captureButton").addEventListener("click", capture, fals
 
 document.getElementById("timeSlider").addEventListener("input", (event) => {
 //  gsap.globalTimeline.pause();
-  const finalTime = gsap.globalTimeline.endTime();
+  // const finalTime = gsap.globalTimeline.endTime();
   const maxVal = event.target.max;
   const val = (event.target.value/maxVal) * finalTime;
+  console.log(val, finalTime);
   gsap.globalTimeline.seek(val);
 });
 
-window.capture=capture;
+// play / pause
+
+document.getElementById("pauseButton").addEventListener("click", (event) => {
+  if(gsap.globalTimeline.paused()) {
+    gsap.globalTimeline.play();
+  } else {
+    gsap.globalTimeline.pause();
+  }
+});
