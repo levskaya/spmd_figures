@@ -78,15 +78,31 @@ const dx = {x:spacing, y:0, z:0};
 const dy = {x:0, y:spacing, z:0};
 const dz = {x:0, y:0, z: spacing};
 
+// offsets to push 0 and 1 halves apart visually
+const neg_half_dx = nd.scalar3(-0.5, dx)
+const ahead_dx = nd.scalar3(N + 0.5, dx)
+
 // HBM coordinates
 const x_hbm = {x: 70.0, y: 610.0, z: 0.0};
 const y_hbm = {x: 200.0, y: 610.0, z: 0.0};
 const z_hbm = {x: 330.0, y: 610.0, z: 0.0};
+const x0_hbm = nd.add3(x_hbm, neg_half_dx);
+const y0_hbm = nd.add3(y_hbm, neg_half_dx);
+const z0_hbm = nd.add3(z_hbm, neg_half_dx);
+const x1_hbm = nd.add3(x_hbm, ahead_dx);
+const y1_hbm = nd.add3(y_hbm, ahead_dx);
+const z1_hbm = nd.add3(z_hbm, ahead_dx);
 
 // VMEM coordinates
 const x_vmem = {x: 275.0, y: 360.0, z: 0.0};
 const y_vmem = {x: 390.0, y: 360.0, z: 0.0};
 const z_vmem = {x: 505.0, y: 360.0, z: 0.0};
+const x0_vmem = nd.add3(x_vmem, neg_half_dx);
+const y0_vmem = nd.add3(y_vmem, neg_half_dx);
+const z0_vmem = nd.add3(z_vmem, neg_half_dx);
+const x1_vmem = nd.add3(x_vmem, ahead_dx);
+const y1_vmem = nd.add3(y_vmem, ahead_dx);
+const z1_vmem = nd.add3(z_vmem, ahead_dx);
 
 // VREG coordinates
 const x_vreg = {x: 350.0, y: 240.0, z: 0.0};
@@ -96,20 +112,7 @@ const z_vreg = {x: 450.0, y: 240.0, z: 0.0};
 // Vector Core coordinates
 const vector_core = {x: 410.0, y: 110.0, z: 0.0};
 
-// push 0 and 1 halves apart visually
-const x0_hbm = nd.add3(nd.scalar3(-0.5, dx), x_hbm);
-const y0_hbm = nd.add3(nd.scalar3(-0.5, dx), y_hbm);
-const z0_hbm = nd.add3(nd.scalar3(-0.5, dx), z_hbm);
-const x1_hbm = nd.add3(nd.scalar3(N + 0.5, dx), x_hbm);
-const y1_hbm = nd.add3(nd.scalar3(N + 0.5, dx), y_hbm);
-const z1_hbm = nd.add3(nd.scalar3(N + 0.5, dx), z_hbm);
-const x0_vmem = nd.add3(nd.scalar3(-0.5, dx), x_vmem);
-const y0_vmem = nd.add3(nd.scalar3(-0.5, dx), y_vmem);
-const z0_vmem = nd.add3(nd.scalar3(-0.5, dx), z_vmem);
-const x1_vmem = nd.add3(nd.scalar3(N + 0.5, dx), x_vmem);
-const y1_vmem = nd.add3(nd.scalar3(N + 0.5, dx), y_vmem);
-const z1_vmem = nd.add3(nd.scalar3(N + 0.5, dx), z_vmem);
-
+// Helper layout and animation functions
 
 // grid positions
 function make_grid(origin) {
@@ -122,7 +125,7 @@ function make_grid(origin) {
 // grid of "packet" boxes
 function make_boxes(origin, color, opacity=1.0) {
   return nd.map(
-    val => new Box(nd.fromArray(val).arr, box_size, color, opacity, scene),
+    val => new Box(val, box_size, color, opacity, scene),
   make_grid(origin));
 }
 
@@ -132,31 +135,26 @@ function make_boxes(origin, color, opacity=1.0) {
 //      ------------
 //      |
 //   [start]
+//
 function push_packets(boxes, start, end, t0, tick, tick_skew=null) {
   tick_skew = tick_skew !== null ? tick_skew : tick;
   let t = t0;
-  let grid0 = make_grid(start);
-  let grid1 = make_grid(end);
-  let shape = nd.shape(boxes);
-  for(let i = 0; i < shape[0]; i++) {
-    for(let j = 0; j < shape[1]; j++) {
-      let delta = nd.fromArray(grid0[i][j]).sub3(grid1[i][j]);
-      let x0 = nd.fromArray(grid0[i][j]);
-      let x1 = x0.add3({x:0, y: delta.arr.y/2.0, z:0}).arr;
-      let x2 = x0.add3({x:delta.arr.x, y: delta.arr.y/2.0, z:0}).arr;
-      let x3 = nd.fromArray(grid1[i][j]).arr;
-      boxes[i][j].toPosition(x1, t + tick, tick);
-      boxes[i][j].toPosition(x2, t + tick * 2, tick);
-      boxes[i][j].toPosition(x3, t + tick * 3, tick);
-      t += tick_skew;
-    }
+  const path_fn = (x_begin, x_end, box) => {
+    let delta = nd.sub3(x_end, x_begin);
+    let x1 = nd.add3(x_begin, {x:0,       y: delta.y/2.0, z:0});
+    let x2 = nd.add3(x_begin, {x:delta.x, y: delta.y/2.0, z:0});
+    box.toPosition(x1, t + tick, tick);
+    box.toPosition(x2, t + tick * 2, tick);
+    box.toPosition(x_end, t + tick * 3, tick);
+    t += tick_skew;
   }
+  nd.map(path_fn, make_grid(start), make_grid(end), boxes);
   return t;
   // add delay until last box movement has finished.
   //return boxes[shape[0]-1][shape[1]-1].timeline.endTime();
 }
 
-
+// Make boxes for animation.
 let X0s = make_boxes(x0_hbm, red);
 let X1s = make_boxes(x1_hbm, red);
 let Y0s = make_boxes(y0_hbm, green);
@@ -165,6 +163,10 @@ let Y1s = make_boxes(y1_hbm, green);
 let Z0s = make_boxes(vector_core, blue, 0.0);
 let Z1s = make_boxes(vector_core, blue, 0.0);
 
+// grab an element from background SVG
+let svg_timeline = gsap.timeline();
+let svgroot = document.getElementById('background').contentDocument;
+const created_buffers_in_svg = Array.from(svgroot.querySelectorAll('.st5,.st6'));
 
 // Main Animation
 let tick = 0.1;
@@ -172,7 +174,14 @@ let hbm_tick = 3 * tick;
 let vmem_tick = 1 * tick;
 let vpu_tick = 0.5 * tick;
 
-let t0 = 0.0;
+let t0 = 1.0;
+
+// fade in the "z" buffers at beginning of animation
+created_buffers_in_svg.forEach(element => {
+  element.style.opacity=0.0;
+  svg_timeline.to(element, {css:{opacity: 1.0}, duration: 1.0}, t0);
+});
+
 let t1 = push_packets(X0s, x0_hbm, x0_vmem, t0, hbm_tick);
 let t2 = push_packets(Y0s, y0_hbm, y0_vmem, t1, hbm_tick);
 let t3 = push_packets(X1s, x1_hbm, x1_vmem, t2, hbm_tick);
