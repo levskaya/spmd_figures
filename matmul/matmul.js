@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CSS2DRenderer } from '/libs/three/CSS2DRenderer.js';
+import { CSS2DRenderer } from '/external/three/CSS2DRenderer.js';
 import { makeGrid, Text, Label } from './boxpusher.js';
 
 window.THREE = THREE;

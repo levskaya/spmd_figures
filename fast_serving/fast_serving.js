@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CSS2DRenderer } from '/libs/three/CSS2DRenderer.js';
+import { CSS2DRenderer } from '/external/three/CSS2DRenderer.js';
 import { Box, Text, Label } from './boxpusher.js';
 import * as nd from './nd.js';
 import { mod, neg3, add3, sub3, scalar3 } from './nd.js';
@@ -143,11 +143,16 @@ for(let step = 0; step < 100; step++) {
   for(let j = 0; j < M; j++) {
     let prefill = "";
     if(data[j].prefill.length > 0) {
-      for(let idx=0; idx < N; idx++) { Ts[idx][M-1-j].toText('', t-0.1).toColor(black, t, 0.0); }
+      for(let idx=0; idx < N; idx++) { 
+        Ts[idx][M-1-j].toText('', t-0.1)
+                      .toColor(black, t, 0.0); 
+      }
       prefill = data[j].prefill;
       for(let idx=0; idx < prefill.length; idx++) {
-        Ts[mod(cursor_pos-idx-1, N)][M-1-j].toText(prefill[prefill.length - 1 - idx], t+8*tick).toColor(green, t, 0.0);
-        Ps[mod(cursor_pos-idx-1, N)][M-1-j].toColor(lightgreen, t, 0.5).toColor(white, t+8*tick, 0.5);
+        Ts[mod(cursor_pos-idx-1, N)][M-1-j].toText(prefill[prefill.length - 1 - idx], t+8*tick)
+                                           .toColor(green, t, 0.0);
+        Ps[mod(cursor_pos-idx-1, N)][M-1-j].toColor(lightgreen, t, 0.5)
+                                           .toColor(white, t+8*tick, 0.5);
       }
       data[j].prefill = "";
       prefill_occurred = true;
@@ -156,7 +161,8 @@ for(let step = 0; step < 100; step++) {
   if(false || !prefill_occurred) {
     for(let j = 0; j < M; j++) {
       let genchar = "";
-      Ps[mod(cursor_pos, N)][M-1-j].toColor(teal, t, 0.5).toColor(white, t+0.5, 0.5);
+      Ps[mod(cursor_pos, N)][M-1-j].toColor(teal, t, 0.5)
+                                   .toColor(white, t+0.5, 0.5);
       if(data[j].gen.length > 0) {
         genchar = data[j].gen[0];
         Ts[mod(cursor_pos, N)][M-1-j].toText(genchar, t+0.5);

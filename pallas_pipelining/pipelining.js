@@ -1,10 +1,10 @@
+import { gsap } from '/external/gsap/all.js';
 import * as THREE from 'three';
-import { CSS2DRenderer } from '/libs/three/CSS2DRenderer.js';
-import { Box, Text, Label } from './boxpusher.js';
-import * as nd from './nd.js';
-import { mod, neg3, add3, sub3, scalar3 } from './nd.js';
-import { gsap } from '/libs/gsap/all.js';
+import { CSS2DRenderer } from '/external/three/CSS2DRenderer.js';
 import { make_capture_handler } from './screen_capture.js';
+import { Box, Text, Label } from './boxpusher.js';
+import { map, empty} from './nd.js';
+import { v3 } from './vectors.js';
 
 // debug
 window.THREE = THREE;
@@ -31,7 +31,7 @@ let clock = new THREE.Clock();
 
 // Scenegraph
 const scene = new THREE.Scene();
-scene.background = null; //new THREE.Color(0x000000, 0.0);
+scene.background = null; // transparent background
 
 // Corresponds to background SVG dims.
 const WinH = 1000.0;
@@ -71,84 +71,85 @@ const N = 4;
 
 // spacing
 const spacing = 10.0;
-const box_size = {x: 0.95*spacing, y: 0.95*spacing};
+const box_size = v3(0.95*spacing, 0.95*spacing, 0);
 
 // unit vectors
-const dx = {x:spacing, y:0, z:0};
-const dy = {x:0, y:spacing, z:0};
-const dz = {x:0, y:0, z: spacing};
+const dx = v3(spacing, 0, 0);
+const dy = v3(0, spacing, 0);
+const dz = v3(0, 0, spacing);;
 
 // offsets to push 0 and 1 halves apart visually
-const neg_half_dx = nd.scalar3(-0.5, dx)
-const ahead_dx = nd.scalar3(N + 0.5, dx)
+const neg_half_dx = dx.clone().multiplyScalar(-0.5);
+const ahead_dx = dx.clone().multiplyScalar(N + 0.5)
 
 // HBM coordinates
-const x_hbm = {x: 70.0, y: 610.0, z: 0.0};
-const y_hbm = {x: 200.0, y: 610.0, z: 0.0};
-const z_hbm = {x: 330.0, y: 610.0, z: 0.0};
-const x0_hbm = nd.add3(x_hbm, neg_half_dx);
-const y0_hbm = nd.add3(y_hbm, neg_half_dx);
-const z0_hbm = nd.add3(z_hbm, neg_half_dx);
-const x1_hbm = nd.add3(x_hbm, ahead_dx);
-const y1_hbm = nd.add3(y_hbm, ahead_dx);
-const z1_hbm = nd.add3(z_hbm, ahead_dx);
+const x_hbm = v3(70.0, 610.0, 0.0);
+const y_hbm = v3(200.0, 610.0, 0.0);
+const z_hbm = v3(330.0, 610.0, 0.0);
+const x0_hbm = x_hbm.clone().add(neg_half_dx);
+const y0_hbm = y_hbm.clone().add(neg_half_dx);
+const z0_hbm = z_hbm.clone().add(neg_half_dx);
+const x1_hbm = x_hbm.clone().add(ahead_dx);
+const y1_hbm = y_hbm.clone().add(ahead_dx);
+const z1_hbm = z_hbm.clone().add(ahead_dx);
 
 // VMEM coordinates
-const x_vmem = {x: 275.0, y: 360.0, z: 0.0};
-const y_vmem = {x: 390.0, y: 360.0, z: 0.0};
-const z_vmem = {x: 505.0, y: 360.0, z: 0.0};
-const x0_vmem = nd.add3(x_vmem, neg_half_dx);
-const y0_vmem = nd.add3(y_vmem, neg_half_dx);
-const z0_vmem = nd.add3(z_vmem, neg_half_dx);
-const x1_vmem = nd.add3(x_vmem, ahead_dx);
-const y1_vmem = nd.add3(y_vmem, ahead_dx);
-const z1_vmem = nd.add3(z_vmem, ahead_dx);
+const x_vmem = v3(275.0, 360.0, 0.0);
+const y_vmem = v3(390.0, 360.0, 0.0);
+const z_vmem = v3(505.0, 360.0, 0.0);
+const x0_vmem = x_vmem.clone().add(neg_half_dx);
+const y0_vmem = y_vmem.clone().add(neg_half_dx);
+const z0_vmem = z_vmem.clone().add(neg_half_dx);
+const x1_vmem = x_vmem.clone().add(ahead_dx);
+const y1_vmem = y_vmem.clone().add(ahead_dx);
+const z1_vmem = z_vmem.clone().add(ahead_dx);
 
 // VREG coordinates
-const x_vreg = {x: 350.0, y: 240.0, z: 0.0};
-const y_vreg = {x: 400.0, y: 240.0, z: 0.0};
-const z_vreg = {x: 450.0, y: 240.0, z: 0.0};
+const x_vreg = v3(350.0, 240.0, 0.0);
+const y_vreg = v3(400.0, 240.0, 0.0);
+const z_vreg = v3(450.0, 240.0, 0.0);
 
 // Vector Core coordinates
-const vector_core = {x: 410.0, y: 110.0, z: 0.0};
+const vector_core = v3(410.0, 110.0, 0.0);
 
 // Helper layout and animation functions
 
 // grid positions
 function make_grid(origin) {
-  return nd.empty([N, N])
-    .indexMap( ([i, j]) => ({x: i, y: j, z: 0}) )
-    .scalar3(spacing)
-    .add3(origin).arr;
+  return empty([N, N])
+    .indexMap( ([i, j]) => v3(i, j, 0) )
+    .map( x => x.multiplyScalar(spacing).add(origin) )
+    .arr
 }
 
 // grid of "packet" boxes
 function make_boxes(origin, color, opacity=1.0) {
-  return nd.map(
+  return map(
     val => new Box(val, box_size, color, opacity, scene),
-  make_grid(origin));
+    make_grid(origin)
+  );
 }
 
 // shove packets along a path like:
-//                [end]
-//                  |
-//      ------------
+//                  end
+//                   |
+//      x1----------x2
 //      |
-//   [start]
+//    start
 //
 function push_packets(boxes, start, end, t0, tick, tick_skew=null) {
   tick_skew = tick_skew !== null ? tick_skew : tick;
   let t = t0;
-  const path_fn = (x_begin, x_end, box) => {
-    let delta = nd.sub3(x_end, x_begin);
-    let x1 = nd.add3(x_begin, {x:0,       y: delta.y/2.0, z:0});
-    let x2 = nd.add3(x_begin, {x:delta.x, y: delta.y/2.0, z:0});
+  const path_fn = (x_start, x_end, box) => {
+    let delta = x_end.clone().sub(x_start);
+    let x1 = x_start.clone().add(v3(0, delta.y/2.0, 0));
+    let x2 = x_start.clone().add(v3(delta.x, delta.y/2.0, 0));
     box.toPosition(x1, t + tick, tick);
     box.toPosition(x2, t + tick * 2, tick);
     box.toPosition(x_end, t + tick * 3, tick);
     t += tick_skew;
   }
-  nd.map(path_fn, make_grid(start), make_grid(end), boxes);
+  map(path_fn, make_grid(start), make_grid(end), boxes);
   return t;
   // add delay until last box movement has finished.
   //return boxes[shape[0]-1][shape[1]-1].timeline.endTime();
@@ -194,9 +195,9 @@ let t7 = push_packets(X0s, x_vreg, vector_core, t6, vpu_tick);
          push_packets(Y0s, y_vreg, vector_core, t6, vpu_tick);
 
 // hide green/red, reveal blue
-nd.map((b) => b.toOpacity(0.0, t7, tick*0.1), X0s);
-nd.map((b) => b.toOpacity(0.0, t7, tick*0.1), Y0s);
-nd.map((b) => b.toOpacity(1.0, t7, tick*0.1), Z0s);
+map((b) => b.toOpacity(0.0, t7, tick*0.1), X0s);
+map((b) => b.toOpacity(0.0, t7, tick*0.1), Y0s);
+map((b) => b.toOpacity(1.0, t7, tick*0.1), Z0s);
 
 let t8 = push_packets(Z0s, vector_core, z_vreg, t7, vpu_tick);
 let t9 = push_packets(Z0s, z_vreg, z0_vmem, t8, vpu_tick);
@@ -208,9 +209,9 @@ let t13 = push_packets(X1s, x_vreg, vector_core, t12, vpu_tick);
           push_packets(Y1s, y_vreg, vector_core, t12, vpu_tick);
 
 // hide green/red inputs, reveal blue outputs
-nd.map((b) => b.toOpacity(0.0, t13, tick*0.1), X1s);
-nd.map((b) => b.toOpacity(0.0, t13, tick*0.1), Y1s);
-nd.map((b) => b.toOpacity(1.0, t13, tick*0.1), Z1s);
+map((b) => b.toOpacity(0.0, t13, tick*0.1), X1s);
+map((b) => b.toOpacity(0.0, t13, tick*0.1), Y1s);
+map((b) => b.toOpacity(1.0, t13, tick*0.1), Z1s);
 
 let t14 = push_packets(Z1s, vector_core, z_vreg, t13, vpu_tick);
 let t15 = push_packets(Z1s, z_vreg, z1_vmem, t14, vpu_tick);

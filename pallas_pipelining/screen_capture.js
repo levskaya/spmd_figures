@@ -1,4 +1,4 @@
-import { gsap } from '/libs/gsap/all.js';
+import { gsap } from '/external/gsap/all.js';
 
 // References:
 // https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia
