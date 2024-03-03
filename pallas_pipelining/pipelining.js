@@ -1,41 +1,25 @@
 import { gsap } from '/external/gsap/all.js';
 import * as THREE from 'three';
 import { CSS2DRenderer } from '/external/three/CSS2DRenderer.js';
-import { make_capture_handler } from '/lib/screen_capture.js';
+import { capture_and_control_ui } from '/lib/control_ui.js';
 import { Box, Text, Label } from '/lib/boxpusher.js';
 import { map, empty} from '/lib/nd.js';
 import { v3 } from '/lib/vectors.js';
+import * as colors from '/lib/colors.js';
 
 // debug
 window.THREE = THREE;
 window.gsap = gsap;
 
-// Colors
-const teal = new THREE.Color(0, 0.86, 0.99);
-const lightgreen = new THREE.Color(0.7, 0.9, 0.7);
-const red = new THREE.Color(0.99, 0., 0.);
-const blue = new THREE.Color("blue");
-const green = new THREE.Color("green");
-const orange = new THREE.Color("orange");
-const purple = new THREE.Color("purple");
-const pink = new THREE.Color("pink");
-const greyred = new THREE.Color(0.9, 0.6, 0.6);
-const grey = new THREE.Color(0.9, 0.9, 0.9);
-const white = new THREE.Color(0xffffff);
-const black = new THREE.Color(0x000000);
-
-const hsl_color = (h, s=0.9, l=0.8) => new THREE.Color().setHSL(h, s, l);
-
-// Clock
-let clock = new THREE.Clock();
-
-// Scenegraph
-const scene = new THREE.Scene();
-scene.background = null; // transparent background
-
 // Corresponds to background SVG dims.
 const WinH = 1000.0;
 const WinW = 918.33;
+
+// Clock
+let clock = new THREE.Clock();
+// Scenegraph
+const scene = new THREE.Scene();
+scene.background = null; // transparent background
 
 // WebGL Render
 const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
@@ -64,7 +48,6 @@ const camera = new THREE.OrthographicCamera(
   /*near*/   0.0,
   /*far*/    1.0);
 camera.position.z = 1.0;
-
 
 // Number of "packets" is N * N
 const N = 4;
@@ -156,13 +139,13 @@ function push_packets(boxes, start, end, t0, tick, tick_skew=null) {
 }
 
 // Make boxes for animation.
-let X0s = make_boxes(x0_hbm, red);
-let X1s = make_boxes(x1_hbm, red);
-let Y0s = make_boxes(y0_hbm, green);
-let Y1s = make_boxes(y1_hbm, green);
+let X0s = make_boxes(x0_hbm, colors.red);
+let X1s = make_boxes(x1_hbm, colors.red);
+let Y0s = make_boxes(y0_hbm, colors.green);
+let Y1s = make_boxes(y1_hbm, colors.green);
 
-let Z0s = make_boxes(vector_core, blue, 0.0);
-let Z1s = make_boxes(vector_core, blue, 0.0);
+let Z0s = make_boxes(vector_core, colors.blue, 0.0);
+let Z1s = make_boxes(vector_core, colors.blue, 0.0);
 
 // grab an element from background SVG
 let svg_timeline = gsap.timeline();
@@ -228,39 +211,12 @@ function animation(time) {
 }
 renderer.setAnimationLoop(animation);
 
-// halt at start
-// gsap.globalTimeline.seek(0);
-// gsap.globalTimeline.pause();
 
+// Capture and Control UI
 
-// UI Actions
-// ------------------------------------------------------------------------------------------------
-
-// record via screencapture
-document.getElementById("captureButton").addEventListener(
-  "click",
-  make_capture_handler(finalTime, "pallas_pipelining.webm", "video/webm"),
-  false
-)
-
-// primitive timeline scroller
-document.getElementById("timeSlider").addEventListener("input", (event) => {
-  const maxVal = event.target.max;
-  const val = (event.target.value/maxVal) * finalTime;
-  console.log(val, finalTime);
-  gsap.globalTimeline.seek(val);
-});
-
-// play / pause
-document.getElementById("pauseButton").addEventListener("click", (event) => {
-  if(gsap.globalTimeline.paused()) {
-    gsap.globalTimeline.play();
-  } else {
-    gsap.globalTimeline.pause();
-  }
-});
-
-// rewind
-document.getElementById("rewindButton").addEventListener("click", (event) => {
-  gsap.globalTimeline.seek(0);
-});
+capture_and_control_ui(
+  "controls",               // control div id
+  finalTime,                // animation time in seconds
+  "pallas_pipelining.webm", // save filename
+  "video/webm"              // save format
+  );
