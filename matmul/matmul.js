@@ -1,9 +1,14 @@
 import * as THREE from 'three';
+import { gsap } from '/external/gsap/all.js';
 import { CSS2DRenderer } from '/external/three/CSS2DRenderer.js';
-import { makeGrid, Text, Label } from './boxpusher.js';
+import { Box, Text, Label } from '/lib/boxpusher.js';
+import { capture_and_control_ui } from '/lib/control_ui.js';
+import { v3, add } from '/lib/vectors.js';
+import { empty} from '/lib/nd.js';
 
+// debug
 window.THREE = THREE;
-
+window.gsap = gsap;
 
 // Colors
 const teal = new THREE.Color(0, 0.66, 0.99);
@@ -35,17 +40,26 @@ camera.position.z = 1;
 // WebGL Render
 const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+document.getElementById("canvas").appendChild( renderer.domElement );
 
 // CSS Element Render
 const labelRenderer = new CSS2DRenderer();
 labelRenderer.setSize( window.innerWidth, window.innerHeight );
 labelRenderer.domElement.style.position = 'absolute';
 labelRenderer.domElement.style.top = '0px';
-document.body.appendChild( labelRenderer.domElement );
+document.getElementById("canvas").appendChild( labelRenderer.domElement );
 
-// Utils
-const v3 = (x,y,z) => new THREE.Vector3(x,y,z);
+
+// grid helper
+export function makeGrid(origin, num, delta, size, clr=grey, opacity=1.0, scene=null) {
+    return empty([num.x, num.y]).indexMap( 
+        ([i, j]) => {
+            let posn = add(origin, 
+                        v3(i * delta.x, (num.y - j) * delta.y, 0),
+                        v3(-size.x/2, size.y/2, 0));  // fudge factor
+            return new Box(posn, size, clr, opacity, scene);
+        }).toArray();
+}
 
 // Animation Constants
 
@@ -60,28 +74,37 @@ const P = 4;
 const size = 0.1;
 const delta = 0.025;
 const spacing = size + delta;
-// origins
-const A_origin = {x: -1.25, y: (P-N)*spacing};
-const B_origin = {x: A_origin.x + 1, y: 0};
-const C_origin = {x: A_origin.x + 2, y: (P-N)*spacing};
-const col_origin = {x: A_origin.x + 0.5, y: 1.25};
-const caption_origin = {x: A_origin.x + 1.5, y: 1};
+// origins (bottom left corner stupidly)
+const A_origin = v3(-1.25, (P-N)*spacing, 0);
+const B_origin = v3(A_origin.x + 1, 0, 0);
+const C_origin = v3(A_origin.x + 2, (P-N)*spacing, 0);
+// mult+add column placement
+const col_origin = v3(A_origin.x + 0.5, 1.25, 0);
+const asterix_origin = add(col_origin, v3(1.3 * spacing, -0.1, 0));
+const plus_origin = add(col_origin, v3(3.3 * spacing, 0, 0));
+// caption placement
+const caption_origin = v3(A_origin.x + 1.5, 1, 0);
 
 // Matrix grids
-let As = makeGrid(A_origin, {x:P, y:N}, {x:spacing, y:spacing}, {x:size, y:size}, teal, 1.0, scene);
-let Bs = makeGrid(B_origin, {x:M, y:P}, {x:spacing, y:spacing}, {x:size, y:size}, teal, 1.0, scene);
-let Cs = makeGrid(C_origin, {x:M, y:N}, {x:spacing, y:spacing}, {x:size, y:size}, grey, 1.0, scene);
+const spacing_v = v3(spacing, spacing, 0);
+const size_v = v3(size, size, 0);
+
+let As = makeGrid(A_origin, v3(P, N, 0), spacing_v, size_v, teal, 1.0, scene);
+let Bs = makeGrid(B_origin, v3(M, P, 0), spacing_v, size_v, teal, 1.0, scene);
+let Cs = makeGrid(C_origin, v3(M, N, 0), spacing_v, size_v, grey, 1.0, scene);
 
 // Static axis labels
-const A00p = As[0][0].position;
-const B00p = Bs[0][0].position;
-const C00p = Cs[0][0].position;
-const A_N_label = new Label({x: A00p.x - spacing, y: A00p.y},        "N", "2em", black, 1.0, scene);
-const A_P_label = new Label({x: A00p.x,           y: A00p.y + size}, "P", "2em", black, 1.0, scene);
-const B_P_label = new Label({x: B00p.x - spacing, y: B00p.y},        "P", "2em", black, 1.0, scene);
-const B_M_label = new Label({x: B00p.x,           y: B00p.y + size}, "M", "2em", black, 1.0, scene);
-const C_N_label = new Label({x: C00p.x - spacing, y: C00p.y},        "N", "2em", black, 1.0, scene);
-const C_M_label = new Label({x: C00p.x,           y: C00p.y + size}, "M", "2em", black, 1.0, scene);
+const A_ul = add(A_origin, v3(0, N*spacing, 0));
+const B_ul = add(B_origin, v3(0, P*spacing, 0));
+const C_ul = add(C_origin, v3(0, N*spacing, 0));
+const dx = v3(-spacing, 0, 0);
+const dy = v3(0, size, 0);
+new Label(add(A_ul, dx), "N", "2em", black, 1.0, scene);
+new Label(add(A_ul, dy), "P", "2em", black, 1.0, scene);
+new Label(add(B_ul, dx), "P", "2em", black, 1.0, scene);
+new Label(add(B_ul, dy), "M", "2em", black, 1.0, scene);
+new Label(add(C_ul, dx), "N", "2em", black, 1.0, scene);
+new Label(add(C_ul, dy), "M", "2em", black, 1.0, scene);
 
 // Arrays for Multiply-Accumulate boxes
 let col0 = Array(4);
@@ -91,8 +114,10 @@ let col1 = Array(4);
 let asterisks = Array(4).fill(null);
 let plusses = Array(4).fill(null);
 for(let p = 0; p < P; p++) {
-    asterisks[p] = new Text({x: col_origin.x + spacing, y: col_origin.y - p * spacing}, "*", 0.05, black, 0.0, scene);
-    plusses[p] = new Text({x: col_origin.x + 3*spacing, y: col_origin.y - p * spacing - spacing/2.0}, "+", 0.05, black, 0.0, scene);
+    asterisks[p] = new Text(
+        add(asterix_origin, v3(0, -p*spacing, 0)), "*", 0.05, black, 0.0, scene);
+    plusses[p] = new Text(
+        add(plus_origin, v3(0, -(p+1)*spacing, 0)), "+", 0.05, black, 0.0, scene);
 }
 
 // Caption element, timeline, and state variables.
@@ -122,12 +147,12 @@ for(let n = 0; n < N; n++) {
         // row/col movement to mult-acc position.
         for(let p = 0; p < P; p++) {
             t += tick;
-            col0[p] = As[p][n].clone()
+            col0[p] = As[p][n].clone(/*hide=*/false)
                               .toOpacity(0.6, t)
-                              .toPosition({x: col_origin.x, y: col_origin.y - p * spacing}, t);
-            col1[p] = Bs[m][p].clone()
+                              .toPosition(add(col_origin, v3(0, -p * spacing, 0)), t);
+            col1[p] = Bs[m][p].clone(/*hide=*/false)
                               .toOpacity(0.6, t)
-                              .toPosition({x: col_origin.x + 2 * spacing, y: col_origin.y - p * spacing}, t);
+                              .toPosition(add(col_origin, v3(2 * spacing, - p * spacing, 0)), t);
             As[p][n].toColor(red, t).toColor(teal, t+ tick);
             Bs[m][p].toColor(red, t).toColor(teal, t+ tick);
 
@@ -136,20 +161,20 @@ for(let n = 0; n < N; n++) {
         t += 3 * tick;
 
         // annotate first additions
-        if(n==0 && m==0) caption.toText("<b>P</b> multiplications <br> + <b>P</b> additions", t+2*tick);
+        if(n==0 && m==0) caption.toText(
+            "<b>P</b> multiplications <br> + <b>P</b> additions", 
+            t+2*tick);
 
         // multiply terms
         for(let p = 0; p < P; p++) {
             col0[p].toColor(red, t)
                    .toColor(teal, t + tick/2)
-                   .toPosition({x: col_origin.x + 2 * spacing,
-                                y: col_origin.y - p * spacing},
-                               t + tick/2)
+                   .toPosition(add(col_origin, v3(2 * spacing, -p * spacing, 0)),
+                               t + tick/2);
             col1[p].toColor(red, t)
                    .toColor(teal, t + tick/2)
-                   .toPosition({x: col_origin.x + 2 * spacing,
-                                y: col_origin.y - p * spacing},
-                               t + tick/2)
+                   .toPosition(add(col_origin, v3(2 * spacing, -p * spacing, 0)),
+                               t + tick/2);
             asterisks[p].toOpacity(0.0, t);
             if(p != P-1) plusses[p].toOpacity(1.0, t);
         }
@@ -157,10 +182,12 @@ for(let n = 0; n < N; n++) {
 
         // add terms
         for(let p = 0; p < P; p++) {
-            col0[p].toPosition({x: col_origin.x + 3 * spacing,
-                                y: col_origin.y - P * (P-2)/4 * spacing}, t)
-            col1[p].toPosition({x: col_origin.x + 3 * spacing,
-                                y: col_origin.y - P * (P-2)/4 * spacing}, t)
+            col0[p].toPosition(
+                add(col_origin, v3(3 * spacing, - P * (P-2)/4 * spacing, 0)), 
+                t);
+            col1[p].toPosition(
+                add(col_origin, v3(3 * spacing, - P * (P-2)/4 * spacing, 0)), 
+                t);
             plusses[p].toOpacity(0.0, t);
         }
 
@@ -186,10 +213,22 @@ for(let n = 0; n < N; n++) {
     }
 }
 
-
 // Animation Loop
 function animation(time) {
     renderer.render( scene, camera );
     labelRenderer.render( scene, camera );
 }
 renderer.setAnimationLoop(animation);
+
+// Capture and Control UI
+
+capture_and_control_ui(
+    "controls",          // control div id
+    t + 4*tick,                   // animation time in seconds
+    "matmul.webm",       // save filename
+    "video/webm"         // save format
+    );
+  
+// gsap.globalTimeline.seek(3.444);
+// gsap.globalTimeline.pause();
+

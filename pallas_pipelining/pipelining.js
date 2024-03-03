@@ -33,11 +33,6 @@ labelRenderer.domElement.style.position = 'absolute';
 labelRenderer.domElement.style.top = '0px';
 document.getElementById("canvas").appendChild( labelRenderer.domElement );
 
-// GSAP Settings
-// by default, globalTimeline removes finished children animations, which
-// prevents us from seeking across the timeline correctly.
-gsap.globalTimeline.autoRemoveChildren = false;
-
 // Cameras
 // Orthographic
 const camera = new THREE.OrthographicCamera(
@@ -102,7 +97,7 @@ function make_grid(origin) {
   return empty([N, N])
     .indexMap( ([i, j]) => v3(i, j, 0) )
     .map( x => x.multiplyScalar(spacing).add(origin) )
-    .arr
+    .toArray();
 }
 
 // grid of "packet" boxes
@@ -204,7 +199,9 @@ let t16 = push_packets(Z1s, z1_vmem, z1_hbm, Math.max(t15, t10), hbm_tick);
 let finalTime = gsap.globalTimeline.endTime();
 console.log(`Animation lasts ${finalTime} seconds.`);
 
+
 // Animation Loop
+
 function animation(time) {
     renderer.render( scene, camera );
     labelRenderer.render( scene, camera );
