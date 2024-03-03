@@ -22,9 +22,6 @@ const black = new THREE.Color(0x000000);
 
 const hsl_color = (h, s=0.9, l=0.8) => new THREE.Color().setHSL(h, s, l);
 
-// Clock
-let clock = new THREE.Clock();
-
 // Scenegraph
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(white);
@@ -63,7 +60,7 @@ camera.position.z = 1;
 
 let cursor_pos = 0;
 function step_cursor() {
-  cursor_pos +=  mod(cursor + 1, N);
+  cursor_pos += mod(cursor + 1, N);
 }
 
 // spacing

@@ -15,8 +15,6 @@ window.gsap = gsap;
 const WinH = 1000.0;
 const WinW = 918.33;
 
-// Clock
-let clock = new THREE.Clock();
 // Scenegraph
 const scene = new THREE.Scene();
 scene.background = null; // transparent background

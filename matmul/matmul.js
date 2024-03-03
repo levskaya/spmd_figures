@@ -18,9 +18,6 @@ const greyred = new THREE.Color(0.9, 0.6, 0.6);
 const white = new THREE.Color(0xffffff);
 const black = new THREE.Color(0x000000);
 
-// Clock
-let clock = new THREE.Clock();
-
 // Scenegraph
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(white);
