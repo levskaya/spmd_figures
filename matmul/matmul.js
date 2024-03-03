@@ -221,11 +221,8 @@ renderer.setAnimationLoop(animation);
 
 capture_and_control_ui(
     "controls",          // control div id
-    t + 4*tick,                   // animation time in seconds
+    t + 4*tick,          // animation time in seconds
     "matmul.webm",       // save filename
     "video/webm"         // save format
     );
   
-// gsap.globalTimeline.seek(3.444);
-// gsap.globalTimeline.pause();
-

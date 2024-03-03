@@ -3,7 +3,7 @@ import { CSS2DRenderer } from '/external/three/CSS2DRenderer.js';
 import { capture_and_control_ui } from '/lib/control_ui.js';
 import { Box, Text } from '/lib/boxpusher.js';
 import * as nd from '/lib/nd.js';
-import { v3, multiplyScalar, add, mod } from '/lib/vectors.js';
+import { v3, scale, add, mod } from '/lib/vectors.js';
 
 window.THREE = THREE;
 
@@ -69,9 +69,8 @@ const dz = v3(0, 0, spacing);;
 
 // grid positions
 const p_grid0 = nd.empty([N, M])
-                 .indexMap( ([i, j]) => {
-                  return v3(i, j, 0).add(grid_origin).multiplyScalar(spacing)
-                }).toArray();
+                  .indexMap( ([i, j]) => add(scale(spacing, v3(i, j, 0)), grid_origin) )
+                  .toArray();
 
 // background black box (for grid)
 const bg_size = v3(N * spacing + 0.05, M * spacing + 0.05);
@@ -91,20 +90,20 @@ let Ps = nd.map(val => new Box(
 
 // letter boxes
 let Ts = nd.map(val => new Text(
-    add(val, multiplyScalar(0.5, dx), multiplyScalar(-0.9, dy)), 
+    add(val, scale(0.5, dx), scale(-0.9, dy)), 
     '', 0.8, black, 1.0, scene),
   p_grid0);
 
 let cursor = new Text(
     add(p_grid0[0][0],
-        multiplyScalar(-0.2 + cursor_pos, dx),
-        multiplyScalar(-2.1, dy)), 
+        scale(-0.2 + cursor_pos, dx),
+        scale(-2.1, dy)), 
     '^', 1.0, black, 1.0, scene);
 
 let stepnum = new Text(
     add(p_grid0[0][0],
-        multiplyScalar(-0.2, dx), 
-        multiplyScalar(-4.1, dy)), 
+        scale(-0.2, dx), 
+        scale(-4.1, dy)), 
     '', 1.0, black, 1.0, scene);
 
 
@@ -138,34 +137,46 @@ for(let step = 0; step < 100; step++) {
 
   cursor.toPosition(
     add(p_grid0[0][0],
-        multiplyScalar(-0.2 + cursor_pos, dx),
-        multiplyScalar(-2.1, dy)), t, 0.5);
+        scale(-0.2 + cursor_pos, dx),
+        scale(-2.1, dy)), t, 0.5);
 
   let prefill_occurred = false;
-
   for(let j = 0; j < M; j++) {
+
     let prefill = "";
+
     if(data[j].prefill.length > 0) {
       for(let idx=0; idx < N; idx++) { 
         Ts[idx][M-1-j].toText('', t-0.1)
                       .toColor(black, t, 0.0); 
       }
+
       prefill = data[j].prefill;
+
       for(let idx=0; idx < prefill.length; idx++) {
-        Ts[mod(cursor_pos-idx-1, N)][M-1-j].toText(prefill[prefill.length - 1 - idx], t+8*tick)
-                                           .toColor(green, t, 0.0);
-        Ps[mod(cursor_pos-idx-1, N)][M-1-j].toColor(lightgreen, t, 0.5)
-                                           .toColor(white, t+8*tick, 0.5);
+        Ts[mod(cursor_pos-idx-1, N)][M-1-j]
+            .toText(prefill[prefill.length - 1 - idx], t+8*tick)
+            .toColor(green, t, 0.0);
+        Ps[mod(cursor_pos-idx-1, N)][M-1-j]
+            .toColor(lightgreen, t, 0.5)
+            .toColor(white, t+8*tick, 0.5);
       }
+
       data[j].prefill = "";
+
       prefill_occurred = true;
     }
+
   }
+
   if(false || !prefill_occurred) {
+
     for(let j = 0; j < M; j++) {
       let genchar = "";
-      Ps[mod(cursor_pos, N)][M-1-j].toColor(teal, t, 0.5)
-                                   .toColor(white, t+0.5, 0.5);
+      Ps[mod(cursor_pos, N)][M-1-j]
+          .toColor(teal, t, 0.5)
+          .toColor(white, t+0.5, 0.5);
+
       if(data[j].gen.length > 0) {
         genchar = data[j].gen[0];
         Ts[mod(cursor_pos, N)][M-1-j].toText(genchar, t+0.5);
@@ -173,11 +184,16 @@ for(let step = 0; step < 100; step++) {
       } else {
         Ts[mod(cursor_pos, N)][M-1-j].toText('', t+0.5);
       }
+
     }
+
     cursor_pos = mod(cursor_pos + 1, N);
     t+=2*tick;
+
   } else {
+
     t+=8*tick; step--;
+
   }
 }
 
@@ -194,7 +210,7 @@ renderer.setAnimationLoop(animation);
 
 capture_and_control_ui(
   "controls",               // control div id
-  t+4*tick,                // animation time in seconds
-  "fast_serving.webm", // save filename
+  t+4*tick,                 // animation time in seconds
+  "fast_serving.webm",      // save filename
   "video/webm"              // save format
   );
