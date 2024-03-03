@@ -1,26 +1,18 @@
 import * as THREE from 'three';
 import { CSS2DRenderer } from '/external/three/CSS2DRenderer.js';
-import { Box, Text, Label } from './boxpusher.js';
-import * as nd from './nd.js';
-import { mod, neg3, add3, sub3, scalar3 } from './nd.js';
+import { capture_and_control_ui } from '/lib/control_ui.js';
+import { Box, Text } from '/lib/boxpusher.js';
+import * as nd from '/lib/nd.js';
+import { v3, multiplyScalar, add, mod } from '/lib/vectors.js';
 
 window.THREE = THREE;
 
 // Colors
 const teal = new THREE.Color(0, 0.86, 0.99);
 const lightgreen = new THREE.Color(0.7, 0.9, 0.7);
-const red = new THREE.Color(0.99, 0., 0.);
-const blue = new THREE.Color("blue");
 const green = new THREE.Color("green");
-const orange = new THREE.Color("orange");
-const purple = new THREE.Color("purple");
-const pink = new THREE.Color("pink");
-const greyred = new THREE.Color(0.9, 0.6, 0.6);
-const grey = new THREE.Color(0.9, 0.9, 0.9);
 const white = new THREE.Color(0xffffff);
 const black = new THREE.Color(0x000000);
-
-const hsl_color = (h, s=0.9, l=0.8) => new THREE.Color().setHSL(h, s, l);
 
 // Scenegraph
 const scene = new THREE.Scene();
@@ -29,14 +21,14 @@ scene.background = new THREE.Color(white);
 // WebGL Render
 const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+document.getElementById("canvas").appendChild( renderer.domElement );
 
 // CSS Element Render
 const labelRenderer = new CSS2DRenderer();
 labelRenderer.setSize( window.innerWidth, window.innerHeight );
 labelRenderer.domElement.style.position = 'absolute';
 labelRenderer.domElement.style.top = '0px';
-document.body.appendChild( labelRenderer.domElement );
+document.getElementById("canvas").appendChild( labelRenderer.domElement );
 
 // Animation Constants
 
@@ -65,44 +57,55 @@ function step_cursor() {
 
 // spacing
 const spacing = 1.0;
-const box_size = {x: 0.95*spacing, y: 0.95*spacing};
+const box_size = v3(0.95*spacing, 0.95*spacing, 0);
 
 // origin
-const grid_origin = {x: -N / 2, y: 0, z: 0.0};
+const grid_origin = v3(-N / 2, 0, 0.0);
 
 // unit vectors
-const dx = {x:spacing, y:0, z:0};
-const dy = {x:0, y:spacing, z:0};
-const dz = {x:0, y:0, z: spacing};
+const dx = v3(spacing, 0, 0);
+const dy = v3(0, spacing, 0);
+const dz = v3(0, 0, spacing);;
 
 // grid positions
 const p_grid0 = nd.empty([N, M])
-                 .indexMap( ([i, j]) => ({x: i, y: j, z: 0}) )
-                 .add3(grid_origin)
-                 .scalar3(spacing).arr;
+                 .indexMap( ([i, j]) => {
+                  return v3(i, j, 0).add(grid_origin).multiplyScalar(spacing)
+                }).toArray();
 
 // background black box (for grid)
-const bg_size = {x: N*spacing+0.05, y: M*spacing+0.05};
+const bg_size = v3(N * spacing + 0.05, M * spacing + 0.05);
 let background = new Box(
-  nd.fromArray(grid_origin).add3({x:-0.025, y: (M-1)*spacing+0.025, z:0}).arr, 
+  nd.fromArray(grid_origin)
+    .map( x => add(x, v3(-0.025, (M - 1) * spacing + 0.025, 0)))
+    .toArray(),
   bg_size, black, 1.0, scene);
 
 // boxes
 let Ps = nd.map(val => new Box(
-  nd.fromArray(val).add3({x:0.025, y: -0.025, z:0}).arr,
-  box_size, white, 1.0, scene), p_grid0);
+    nd.fromArray(val)
+    .map( x => add(x, v3(0.025, -0.025, 0)))
+    .toArray(),
+    box_size, white, 1.0, scene), 
+  p_grid0);
 
 // letter boxes
 let Ts = nd.map(val => new Text(
-  add3(val, scalar3(0.5, dx), scalar3(-0.9, dy)), '', 0.8, black, 1.0, scene),
+    add(val, multiplyScalar(0.5, dx), multiplyScalar(-0.9, dy)), 
+    '', 0.8, black, 1.0, scene),
   p_grid0);
 
-
 let cursor = new Text(
-    add3(p_grid0[0][0], scalar3(-0.2 + cursor_pos, dx), scalar3(-2.1, dy)), '^', 1.0, black, 1.0, scene);
+    add(p_grid0[0][0],
+        multiplyScalar(-0.2 + cursor_pos, dx),
+        multiplyScalar(-2.1, dy)), 
+    '^', 1.0, black, 1.0, scene);
 
 let stepnum = new Text(
-  add3(p_grid0[0][0], scalar3(-0.2, dx), scalar3(-4.1, dy)), '', 1.0, black, 1.0, scene);
+    add(p_grid0[0][0],
+        multiplyScalar(-0.2, dx), 
+        multiplyScalar(-4.1, dy)), 
+    '', 1.0, black, 1.0, scene);
 
 
 // Main Animation
@@ -111,7 +114,7 @@ let t = 0.0;
 
 t+=4*tick;
 
-let data = nd.empty([M]).map(x => ({prefill: "", gen: ""})).arr;
+let data = nd.empty([M]).map(x => ({prefill: "", gen: ""})).toArray();
 
 const script = {
   0: {0: {prefill: "foobar", gen: " is False"}},
@@ -133,7 +136,10 @@ for(let step = 0; step < 100; step++) {
     delete script[step];
   }
 
-  cursor.toPosition(add3(p_grid0[0][0], scalar3(-0.2 + cursor_pos, dx), scalar3(-2.1, dy)), t, 0.5);
+  cursor.toPosition(
+    add(p_grid0[0][0],
+        multiplyScalar(-0.2 + cursor_pos, dx),
+        multiplyScalar(-2.1, dy)), t, 0.5);
 
   let prefill_occurred = false;
 
@@ -182,3 +188,13 @@ function animation(time) {
     labelRenderer.render( scene, camera );
 }
 renderer.setAnimationLoop(animation);
+
+
+// Capture and Control UI
+
+capture_and_control_ui(
+  "controls",               // control div id
+  t+4*tick,                // animation time in seconds
+  "fast_serving.webm", // save filename
+  "video/webm"              // save format
+  );
