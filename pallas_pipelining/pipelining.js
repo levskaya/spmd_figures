@@ -1,10 +1,10 @@
 import { gsap } from '/external/gsap/all.js';
 import * as THREE from 'three';
 import { CSS2DRenderer } from '/external/three/CSS2DRenderer.js';
-import { make_capture_handler } from './screen_capture.js';
-import { Box, Text, Label } from './boxpusher.js';
-import { map, empty} from './nd.js';
-import { v3 } from './vectors.js';
+import { make_capture_handler } from '/lib/screen_capture.js';
+import { Box, Text, Label } from '/lib/boxpusher.js';
+import { map, empty} from '/lib/nd.js';
+import { v3 } from '/lib/vectors.js';
 
 // debug
 window.THREE = THREE;
