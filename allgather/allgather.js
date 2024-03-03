@@ -94,7 +94,6 @@ let devices = empty([device_posns.length, device_posns[0].length])
                                 v3( (N+2)*spacing, (N+2)*spacing,0),
                                 grey, 0.0, scene)).toArray();
 // shards
-// let shards = arr2dInit(N, N);
 let shards = empty([N, N]).toArray();
 for(let n = 0; n < N; n++) {
   shards[n][n] = new Box(
