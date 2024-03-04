@@ -19,7 +19,8 @@ To view, run `python -m http.server 8000` from the repo root.
  - fast_serving - interleaved ring-buffer serving
  - pallas pipelining - pallas software pipelining animation
  - collective_ag_matmul - bad attempt at a collective matmul animation
-
+ - boxes - trying to wrestle three.js into behaving in actual 3d renders...
+ 
 ## TODO
 
  - The animations are just simple global scripts used to capture video, they aren't scoped as components for inclusion in webpages.  We'd want to encapsulate them as react components or something similar for that.
