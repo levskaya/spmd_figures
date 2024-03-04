@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { gsap } from '/external/gsap/all.js';
 import { CSS2DRenderer } from '/external/three/CSS2DRenderer.js';
-import { Box, Text, Label } from '/lib/boxpusher.js';
+import { Rect, Text, Label } from '/lib/boxpusher.js';
 import { capture_and_control_ui } from '/lib/control_ui.js';
 import { v3, add } from '/lib/vectors.js';
 import { empty} from '/lib/nd.js';
@@ -54,7 +54,7 @@ export function makeGrid(origin, num, delta, size, clr=grey, opacity=1.0, scene=
             let posn = add(origin, 
                         v3(i * delta.x, (num.y - j) * delta.y, 0),
                         v3(-size.x/2, size.y/2, 0));  // fudge factor
-            return new Box(posn, size, clr, opacity, scene);
+            return new Rect(posn, size, clr, opacity, scene);
         }).toArray();
 }
 

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { CSS2DRenderer } from '/external/three/CSS2DRenderer.js';
 import { capture_and_control_ui } from '/lib/control_ui.js';
-import { Box, Text } from '/lib/boxpusher.js';
+import { Rect, Text } from '/lib/boxpusher.js';
 import * as nd from '/lib/nd.js';
 import { v3, scale, add, mod } from '/lib/vectors.js';
 
@@ -74,14 +74,14 @@ const p_grid0 = nd.empty([N, M])
 
 // background black box (for grid)
 const bg_size = v3(N * spacing + 0.05, M * spacing + 0.05);
-let background = new Box(
+let background = new Rect(
   nd.fromArray(grid_origin)
     .map( x => add(x, v3(-0.025, (M - 1) * spacing + 0.025, 0)))
     .toArray(),
   bg_size, black, 1.0, scene);
 
 // boxes
-let Ps = nd.map(val => new Box(
+let Ps = nd.map(val => new Rect(
     nd.fromArray(val)
     .map( x => add(x, v3(0.025, -0.025, 0)))
     .toArray(),

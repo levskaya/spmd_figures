@@ -1,7 +1,7 @@
 import { gsap } from '/external/gsap/all.js';
 import * as THREE from 'three';
 import { CSS2DRenderer } from '/external/three/CSS2DRenderer.js';
-import { Box, Text } from '/lib/boxpusher.js';
+import { Rect, Text } from '/lib/boxpusher.js';
 import * as nd from '/lib/nd.js';
 import { v3, add, sub, mul, scale, neg, mod} from '/lib/vectors.js';
 import { empty } from '/lib/nd.js';
@@ -105,11 +105,11 @@ const left_boundary = add(q_posns[0], scale(-2, dy), neg(DX));
 
 
 // devices
-let devices = nd.map(val => new Box(val, devSizeV, grey, 0.0, scene), device_posns);
+let devices = nd.map(val => new Rect(val, devSizeV, grey, 0.0, scene), device_posns);
 
 // Edge condition: white blocks to mask R/L edge shards moving.
-let maskL = new Box(add(device_posns[N-1][0], DX, dz), devSpacingV, white, 1.0, scene);
-let maskR = new Box(add(device_posns[0][0], neg(DX), dz), devSpacingV, white, 1.0, scene);
+let maskL = new Rect(add(device_posns[N-1][0], DX, dz), devSpacingV, white, 1.0, scene);
+let maskR = new Rect(add(device_posns[0][0], neg(DX), dz), devSpacingV, white, 1.0, scene);
 
 const multiply_0 = new Text(add(q_grid0[N/2], scale(-1.2, dx), scale(-0.8, dy)),
                             "*", 0.2, black, 1.0, scene);
@@ -122,9 +122,9 @@ const plusses = a_posns.map(
     v => new Text(add(v, scale(-0.6, dx), scale(-0.75, dy)), "+", 0.1, black, 0.0, scene));
 
 // P, Q arrays and accumulator A
-let Ps = nd.map(val => new Box(val, box_size, purple, 1.0, scene), p_grid0);
-let Qs = nd.map(val => new Box(val, box_size, green, 1.0, scene), q_grid0);
-let As = nd.map(val => new Box(val, box_size, teal, 0.0, scene), a_grid0);
+let Ps = nd.map(val => new Rect(val, box_size, purple, 1.0, scene), p_grid0);
+let Qs = nd.map(val => new Rect(val, box_size, green, 1.0, scene), q_grid0);
+let As = nd.map(val => new Rect(val, box_size, teal, 0.0, scene), a_grid0);
 
 let movingQs = nd.empty([N]).arr;
 let movingPs = nd.empty([N]).arr;

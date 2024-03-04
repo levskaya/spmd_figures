@@ -1,7 +1,7 @@
 import { gsap } from '/external/gsap/all.js';
 import * as THREE from 'three';
 import { CSS2DRenderer } from '/external/three/CSS2DRenderer.js';
-import { Box, Text, Label } from '/lib/boxpusher.js';
+import { Rect, Text, Label } from '/lib/boxpusher.js';
 import { v3, add, sub, mul, mod} from '/lib/vectors.js';
 import { fromArray, empty } from '/lib/nd.js';
 import { capture_and_control_ui } from '/lib/control_ui.js';
@@ -91,7 +91,7 @@ shard_posns = fromArray(shard_posns).squeeze().toArray();    // now 2D
 // Drawn elements
 
 let devices = fromArray(device_posns).map( 
-      posn => new Box(posn, 
+      posn => new Rect(posn, 
                       v3((N+2)*spacing, (N+2)*spacing, 0), // size
                       grey, 0.0, scene)
   ).toArray();
@@ -99,7 +99,7 @@ let devices = fromArray(device_posns).map(
 // starting shards in center device position
 let shards = empty([N, N]).toArray();
 for(let n = 0; n < N; n++) {
-  shards[n][n] = new Box(
+  shards[n][n] = new Rect(
     sub(shard_posns[N/2][n], v3( N * spacing/2,0,0)),
     v3( N*spacing, spacing, 0),
     black, 0.0, scene);
@@ -115,10 +115,10 @@ const x_delta = sub(shard_posns[1][0],
 const z_delta = v3(0, 0, .1);
 
 // Edge Masks: white blocks to mask R/L edge shards moving.
-new Box(add(add(device_posns[N-1], x_delta), z_delta),
+new Rect(add(add(device_posns[N-1], x_delta), z_delta),
         v3( (N+2)*spacing, (N+2)*spacing, 0 ),
         white, 1.0, scene);
-new Box(add(sub(device_posns[0], x_delta), z_delta),
+new Rect(add(sub(device_posns[0], x_delta), z_delta),
         v3( (N+2)*spacing, (N+2)*spacing, 0 ),
         white, 1.0, scene);
 

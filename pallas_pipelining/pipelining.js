@@ -2,7 +2,7 @@ import { gsap } from '/external/gsap/all.js';
 import * as THREE from 'three';
 import { CSS2DRenderer } from '/external/three/CSS2DRenderer.js';
 import { capture_and_control_ui } from '/lib/control_ui.js';
-import { Box, Text, Label } from '/lib/boxpusher.js';
+import { Rect, Text, Label } from '/lib/boxpusher.js';
 import { map, empty} from '/lib/nd.js';
 import { v3 } from '/lib/vectors.js';
 import * as colors from '/lib/colors.js';
@@ -101,7 +101,7 @@ function make_grid(origin) {
 // grid of "packet" boxes
 function make_boxes(origin, color, opacity=1.0) {
   return map(
-    val => new Box(val, box_size, color, opacity, scene),
+    val => new Rect(val, box_size, color, opacity, scene),
     make_grid(origin)
   );
 }
