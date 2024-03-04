@@ -3,8 +3,9 @@ import * as THREE from 'three';
 import { CSS2DRenderer } from '/external/three/CSS2DRenderer.js';
 import { Box, Text, Label } from '/lib/boxpusher.js';
 import { v3, add, sub, mul, mod} from '/lib/vectors.js';
-import { empty } from '/lib/nd.js';
+import { fromArray, empty } from '/lib/nd.js';
 import { capture_and_control_ui } from '/lib/control_ui.js';
+// import { fromArray } from '../lib/nd';
 
 // debug
 window.THREE = THREE;
@@ -64,67 +65,67 @@ const grid_origin = v3( -N * N * spacing / 2 - N * spacing, 0.0, 0.0);
 
 // Position grid
 // 2d outer device grid
-// 2d inner shard grid
-function multiGrid(origin, num, delta, ioffset, inum, idelta) {
-  let outer_rows = empty([num.x, num.y]).indexMap( 
-    ([i, j]) => add(origin, mul(v3(i, num.y-j, 0), delta)))
-    .toArray();
-  let rows = empty([num.x, num.y, inum.x, inum.y]).indexMap( 
-    ([i, j, k ,l]) => add(add(outer_rows[i][j], ioffset), 
-                          mul(v3(k, inum.y-l, 0), idelta)))
-    .toArray();
-  return [outer_rows, rows];
-}
+const outer_sizes = v3(N, 1, 0);
+const outer_delta = v3((N+3)*spacing, (N+3)*spacing, 0);
 
-const [device_posns, shard_posns] = multiGrid(
-  grid_origin,
-  v3(N, 1, 0),  // outer numbers
-  v3((N+3)*spacing, (N+3)*spacing, 0),  // outer delta
-  v3(spacing, -(N+1)*spacing, 0),  // offset into inner grid
-  v3(1, N, 0),  // inner numbers
-  v3(spacing, spacing, 0),  // inner delta
-  );
+let device_posns = empty([outer_sizes.x, outer_sizes.y]).indexMap( 
+  ([i, j]) => add(grid_origin, mul(v3(i, outer_sizes.y-j, 0), outer_delta)))
+  .toArray();
+
+// 2d inner shard grid
+const inner_offset = v3(spacing, -(N+1)*spacing, 0);  // offset into inner grid
+const inner_sizes = v3(1, N, 0);
+const inner_delta = v3(spacing, spacing, 0);
+
+let shard_posns = empty([outer_sizes.x, outer_sizes.y, inner_sizes.x, inner_sizes.y])
+    .indexMap( 
+        ([i, j, k ,l]) => add(add(device_posns[i][j], inner_offset), 
+                              mul(v3(k, inner_sizes.y-l, 0), inner_delta)))
+    .toArray();
+
+// Simplify indexing as devices only range over x-axis and shards over y-axis.
+device_posns = fromArray(device_posns).squeeze().toArray();  // now 1D
+shard_posns = fromArray(shard_posns).squeeze().toArray();    // now 2D
 
 
 // Drawn elements
 
-// device boxes
-let devices = empty([device_posns.length, device_posns[0].length])
-    .indexMap( ([i, j]) => new Box(device_posns[i][j],
-                                v3( (N+2)*spacing, (N+2)*spacing,0),
-                                grey, 0.0, scene)).toArray();
-// shards
+let devices = fromArray(device_posns).map( 
+      posn => new Box(posn, 
+                      v3((N+2)*spacing, (N+2)*spacing, 0), // size
+                      grey, 0.0, scene)
+  ).toArray();
+
+// starting shards in center device position
 let shards = empty([N, N]).toArray();
 for(let n = 0; n < N; n++) {
   shards[n][n] = new Box(
-    sub(shard_posns[N/2][0][0][n], v3( N * spacing/2,0,0)),
+    sub(shard_posns[N/2][n], v3( N * spacing/2,0,0)),
     v3( N*spacing, spacing, 0),
     black, 0.0, scene);
 }
 
 // shard colors
-const clrs = [];
-for(let n = 0; n < N; n++) {
-  clrs.push(hsl_color(n / (N-1) * 4/5, 0.9, 0.5));
-}
+const clrs = empty([N])
+             .indexMap( ([n]) => hsl_color(n / (N-1) * 4/5, 0.9, 0.5) )
+             .toArray();
 
+const x_delta = sub(shard_posns[1][0],
+                    shard_posns[0][0]);
+const z_delta = v3(0, 0, .1);
 
-const x_delta = sub(shard_posns[1][0][0][0],
-                    shard_posns[0][0][0][0]);
-const z_delta = v3(0,0,.1);
-
-// Edge condition: white blocks to mask R/L edge shards moving.
-new Box(add(add(device_posns[N-1][0], x_delta), z_delta),
+// Edge Masks: white blocks to mask R/L edge shards moving.
+new Box(add(add(device_posns[N-1], x_delta), z_delta),
         v3( (N+2)*spacing, (N+2)*spacing, 0 ),
         white, 1.0, scene);
-new Box(add(sub(device_posns[0][0], x_delta), z_delta),
+new Box(add(sub(device_posns[0], x_delta), z_delta),
         v3( (N+2)*spacing, (N+2)*spacing, 0 ),
         white, 1.0, scene);
-
-let pos = add(device_posns[N/2][0], v3(0,2,0));
 
 // expository caption above graphics
-const caption = new Label(pos, "", "3em", black, 0.0, scene);
+const caption = new Label(
+  add(device_posns[N/2], v3(0,2,0)),
+  "", "3em", black, 0.0, scene);
 
 
 // Main Animation
@@ -157,15 +158,15 @@ t += 8*tick;
 caption.toText("distributed across devices", t);
 
 for(let n = 0; n < N; n++) {
-  shards[n][n].toPosition(shard_posns[n][0][0][n], t, 4*tick);
-  devices[n][0].toOpacity(1.0, t, 4*tick);
+  shards[n][n].toPosition(shard_posns[n][n], t, 4*tick);
+  devices[n].toOpacity(1.0, t, 4*tick);
 }
 
 // label devices
 for(let i = 0; i < device_posns.length; i++) {
   const y_delta = v3( 1*spacing, 2*spacing,0);
   let foo = new Text(
-    add(device_posns[i][0], y_delta), `${i}`, 0.2, black, 0.0, scene)
+    add(device_posns[i], y_delta), `${i}`, 0.2, black, 0.0, scene)
     .toOpacity(1.0, t, 4*tick);
 }
 
@@ -182,21 +183,21 @@ for(let p = 0; p < N/2; p++) {
     if(n != N-1) {
       shards[fwd][last] = shards[n][last]
           .clone(true, t)
-          .toPosition(shard_posns[fwd][0][0][last], t, 4*tick);
+          .toPosition(shard_posns[fwd][last], t, 4*tick);
     }
     // Boundary condition handling for rightmost transfer
     else {
       // vanish to right
-      right_boundary = add(shard_posns[n][0][0][last], x_delta);
+      right_boundary = add(shard_posns[n][last], x_delta);
       disappearing_box = shards[n][last]
           .clone(true, t)
           .toPosition(right_boundary, t, 4*tick);
       // appear from left edge
-      left_boundary = sub(shard_posns[fwd][0][0][last], x_delta);
+      left_boundary = sub(shard_posns[fwd][last], x_delta);
       shards[fwd][last] = shards[n][last]
           .clone(true, t)
           .toPosition(left_boundary, t, 0.0)
-          .toPosition(shard_posns[fwd][0][0][last], t, 4*tick);
+          .toPosition(shard_posns[fwd][last], t, 4*tick);
     }
   }
 
@@ -211,21 +212,21 @@ for(let p = 0; p < N/2; p++) {
       if(n != 0) {
         shards[bwd][last] = shards[n][last]
             .clone(true, t)
-            .toPosition(shard_posns[bwd][0][0][last], t, 4*tick);
+            .toPosition(shard_posns[bwd][last], t, 4*tick);
       }
       // Boundary condition handling for leftmost transfer
       else {
         // vanish to left
-        left_boundary = sub(shard_posns[n][0][0][last], x_delta);
+        left_boundary = sub(shard_posns[n][last], x_delta);
         disappearing_box = shards[n][last]
             .clone(true, t)
             .toPosition(left_boundary, t, 4*tick);
         // appear from right edge
-        right_boundary = add(shard_posns[bwd][0][0][last], x_delta);
+        right_boundary = add(shard_posns[bwd][last], x_delta);
         shards[bwd][last] = shards[n][last]
             .clone(true, t)
             .toPosition(right_boundary, t, 0.0)
-            .toPosition(shard_posns[bwd][0][0][last], t, 4*tick);
+            .toPosition(shard_posns[bwd][last], t, 4*tick);
       }
     }
   }

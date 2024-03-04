@@ -4,7 +4,8 @@ import { CSS2DRenderer } from '/external/three/CSS2DRenderer.js';
 import { capture_and_control_ui } from '/lib/control_ui.js';
 import { Box, Text, Label } from '/lib/boxpusher.js';
 import { v3, add, sub, mul, mod} from '/lib/vectors.js';
-import { empty } from '/lib/nd.js';
+import { empty, fromArray } from '/lib/nd.js';
+// import { fromArray } from '../lib/nd';
 
 // debug
 window.THREE = THREE;
@@ -64,70 +65,69 @@ const grid_origin = v3( -N * N * spacing / 2 - N * spacing,  0.0,  0.0);
 
 // Position grid
 // 2d outer device grid
-// 2d inner shard grid
-function multiGrid(origin, num, delta, ioffset, inum, idelta) {
-  let outer_rows = empty([num.x, num.y]).indexMap( 
-    ([i, j]) => add(origin, mul(v3(i, num.y-j, 0), delta)))
-    .toArray();
-  let rows = empty([num.x, num.y, inum.x, inum.y]).indexMap( 
-    ([i, j, k ,l]) => add(add(outer_rows[i][j], ioffset), 
-                          mul(v3(k, inum.y-l, 0), idelta)))
-    .toArray();
-  return [outer_rows, rows];
-}
+const outer_sizes = v3(N, 1, 0);
+const outer_delta = v3((N+3)*spacing, (N+3)*spacing, 0);
 
-const [device_posns, shard_posns] = multiGrid(
-  grid_origin,
-  v3(N, 1, 0),  // outer numbers
-  v3((N+3)*spacing, (N+3)*spacing, 0),  // outer delta
-  v3(spacing, -(N+1)*spacing, 0),  // offset into inner grid
-  v3(1, N, 0),  // inner numbers
-  v3(spacing, spacing, 0),  // inner delta
-);
+let device_posns = empty([outer_sizes.x, outer_sizes.y]).indexMap( 
+  ([i, j]) => add(grid_origin, mul(v3(i, outer_sizes.y-j, 0), outer_delta)))
+  .toArray();
+
+// 2d inner shard grid
+const inner_offset = v3(spacing, -(N+1)*spacing, 0);  // offset into inner grid
+const inner_sizes = v3(1, N, 0);
+const inner_delta = v3(spacing, spacing, 0);
+
+let shard_posns = empty([outer_sizes.x, outer_sizes.y, inner_sizes.x, inner_sizes.y])
+    .indexMap( 
+        ([i, j, k ,l]) => add(add(device_posns[i][j], inner_offset), 
+                              mul(v3(k, inner_sizes.y-l, 0), inner_delta)))
+    .toArray();
+
+// Simplify indexing as devices only range over x-axis and shards over y-axis.
+device_posns = fromArray(device_posns).squeeze().toArray();  // now 1D
+shard_posns = fromArray(shard_posns).squeeze().toArray();    // now 2D
 
 
 // Drawn elements
 
 // device boxes
-let devices = empty([device_posns.length, device_posns[0].length])
-    .indexMap( ([i, j]) => new Box(device_posns[i][j],
-                                v3( (N+2)*spacing, (N+2)*spacing,0),
-                                grey, 0.0, scene)).toArray();
+let devices = fromArray(device_posns).map( 
+    posn => new Box(
+      posn, v3((N+2)*spacing, (N+2)*spacing, 0), grey, 0.0, scene))
+    .toArray();
 
 // shards
-let shards = empty([N, N]).toArray();
-for(let i = 0; i < N; i++) {
-  for(let j = 0; j < N; j++) {
-    shards[i][j] = new Box(
-      sub(shard_posns[i][0][0][j], v3(0, 0, 0)),
-      v3( N*spacing, spacing, 0 ),
-      red, 0.0, scene);
-  }
-}
+let shards = fromArray(shard_posns).map(
+    posn => new Box(
+        posn, v3(N*spacing, spacing, 0), red, 0.0, scene))
+    .toArray()
 
 // shard colors
 const clrs = empty([N])
              .indexMap( ([n]) => hsl_color(n / (N-1) * 4/5, 0.9, 0.5) )
              .toArray();
 
-const x_delta = sub(shard_posns[1][0][0][0],
-                    shard_posns[0][0][0][0]);
-const z_delta = v3(0, 0, .1);
-
+// delta-x increment to move shards across device boxes
+const x_delta = sub(shard_posns[1][0], shard_posns[0][0]);
 
 // Edge condition masks: white blocks to mask R/L edge shards moving.
-new Box(add(add(device_posns[N-1][0], x_delta), z_delta),
-                v3( (N+2)*spacing,  (N+2)*spacing, 0), white, 1.0, scene);
-new Box(add(sub(device_posns[0][0], x_delta), z_delta),
-                 v3( (N+2)*spacing,  (N+2)*spacing, 0), white, 1.0, scene);
+new Box(add(add(device_posns[N-1], x_delta), v3(0, 0, .1)),
+        v3((N+2)*spacing, (N+2)*spacing, 0),
+        white, 1.0, scene);
+new Box(add(sub(device_posns[0], x_delta), v3(0, 0, .1)),
+        v3((N+2)*spacing, (N+2)*spacing, 0),
+        white, 1.0, scene);
 
 // expository caption
-let pos = add(device_posns[N/2][0], v3(0,2,0));
-const caption = new Label(pos, "", "3em", black, 0.0, scene);
+const caption = new Label(
+    add(device_posns[N/2], v3(0,2,0)),
+    "", "3em", black, 0.0, scene);
 
 
 // Main Animation
-let disappearing_box, left_boundary, right_boundary;
+
+
+let left_boundary, right_boundary;
 
 let t = 0.0;
 
@@ -144,9 +144,9 @@ for(let i = 0; i < N; i++) {
 t+=2*tick;
 
 for(let i = 0; i < device_posns.length; i++) {
-  devices[i][0].toOpacity(1.0, t, 4*tick);
+  devices[i].toOpacity(1.0, t, 4*tick);
   const y_delta = v3( 1*spacing,  2*spacing, 0);
-  new Text(add(device_posns[i][0], y_delta), 
+  new Text(add(device_posns[i], y_delta), 
            `${i}`, 0.2, black, 0.0, scene)
       .toOpacity(1.0, t, 4*tick);
 }
@@ -163,6 +163,7 @@ t+= 2*tick;
 t+= 2*tick;
 
 const rs_dur = 8*tick;
+// to center "+" symbols over shard during reduction
 const shard_center_offset = v3( N*spacing/2,  -spacing - 0.05,  0.1);
 
 for(let p = 0; p < N/2; p++) {
@@ -170,21 +171,21 @@ for(let p = 0; p < N/2; p++) {
     let fwd = mod(n + 1, N);
     let which = mod(n + N/2 - p, N);
     if(n != N-1) {
-      shards[n][which].toPosition(shard_posns[fwd][0][0][which], t, rs_dur)
+      shards[n][which].toPosition(shard_posns[fwd][which], t, rs_dur)
                       .toOpacity(0.0, t + rs_dur, 0);
       shards[fwd][which].toOpacity( Math.pow(2, p+1) / Math.pow(2, N/2), t+rs_dur, 0);
     }
     else {
-      right_boundary = add(shard_posns[n][0][0][which], x_delta);
-      left_boundary = sub(shard_posns[fwd][0][0][which], x_delta);
+      right_boundary = add(shard_posns[n][which], x_delta);
+      left_boundary = sub(shard_posns[fwd][which], x_delta);
 
       shards[n][which].toPosition(right_boundary, t, rs_dur);
       shards[n][which].clone(true, t).toPosition(left_boundary, t, 0.0)
-                                     .toPosition(shard_posns[fwd][0][0][which], t, rs_dur)
+                                     .toPosition(shard_posns[fwd][which], t, rs_dur)
                                      .toOpacity(0.0, t + rs_dur, 0);
       shards[fwd][which].toOpacity( Math.pow(2, p+1) / Math.pow(2, N/2), t + rs_dur, 0);
     }
-    let plus = new Text(add(shard_posns[fwd][0][0][which], shard_center_offset), '+', 0.25, black, 0.0, scene)
+    let plus = new Text(add(shard_posns[fwd][which], shard_center_offset), '+', 0.25, black, 0.0, scene)
                     .toOpacity(1.0, t + rs_dur*0.8, 0.2 * rs_dur)
                     .toOpacity(0.0, t + rs_dur, 0.2 * rs_dur);
   }
@@ -195,24 +196,24 @@ for(let p = 0; p < N/2; p++) {
       let which = mod(n + N/2 + 1 + p, N);
       if(n != 0) {
         shards[n][which]
-            .toPosition(shard_posns[bwd][0][0][which], t, rs_dur)
+            .toPosition(shard_posns[bwd][which], t, rs_dur)
             .toOpacity(0.0, t + rs_dur, 0);
         shards[bwd][which]
             .toOpacity( Math.pow(2, p+1) / Math.pow(2, N/2), t + rs_dur, 0);
       }
       else {
-        left_boundary = sub(shard_posns[n][0][0][which], x_delta);
-        right_boundary = add(shard_posns[bwd][0][0][which], x_delta);
+        left_boundary = sub(shard_posns[n][which], x_delta);
+        right_boundary = add(shard_posns[bwd][which], x_delta);
 
         shards[n][which].toPosition(left_boundary, t, rs_dur);
         shards[n][which]
             .clone(true, t)
             .toPosition(right_boundary, t, 0.0)
-            .toPosition(shard_posns[bwd][0][0][which], t, rs_dur)
+            .toPosition(shard_posns[bwd][which], t, rs_dur)
             .toOpacity(0.0, t + rs_dur, 0);
         shards[bwd][which].toOpacity( Math.pow(2, p+1) / Math.pow(2, N/2), t + rs_dur, 0);
       }
-    let plus = new Text(add(shard_posns[bwd][0][0][which], shard_center_offset), '+', 0.25, black, 0.0, scene)
+    let plus = new Text(add(shard_posns[bwd][which], shard_center_offset), '+', 0.25, black, 0.0, scene)
                     .toOpacity(1.0, t + rs_dur*0.8, 0.2 * rs_dur)
                     .toOpacity(0.0, t + rs_dur, 0.2 * rs_dur);
     }
