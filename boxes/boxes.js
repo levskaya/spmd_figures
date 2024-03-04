@@ -23,7 +23,11 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(white);
 
 // WebGL Render
-const renderer = new THREE.WebGLRenderer({antialias: true});
+const renderer = new THREE.WebGLRenderer({
+  antialias: true,
+  logarithmicDepthBuffer: true,
+  // localClippingEnabled: false,
+});
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.getElementById("canvas").appendChild( renderer.domElement );
 
@@ -49,7 +53,7 @@ const camera = new THREE.PerspectiveCamera(
 	/*fov*/    45,
 	/*aspect*/ aspect,
 	/*near*/   0.01,
-	/*far*/    200);
+	/*far*/    40);
 
 // camera.position.set( 0, 0, 10 );
 // camera.lookAt(0, 0, 0);
@@ -88,6 +92,8 @@ let shard_posns = empty([outer_sizes.x, outer_sizes.y, outer_sizes.z,
 console.log(shard_posns);
 
 // Drawn elements
+
+// trouble as-is, need to convert to wireframe?
 
 // let devices = fromArray(device_posns).map( 
 //       posn => new Box(posn, 
