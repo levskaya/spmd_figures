@@ -1,25 +1,23 @@
+import { gsap } from '/external/gsap/all.js';
 import * as THREE from 'three';
 import { CSS2DRenderer } from '/external/three/CSS2DRenderer.js';
-import { Box, Text, Label } from './boxpusher.js';
-import * as nd from './nd.js';
-import { mod, neg3, add3, sub3, scalar3 } from './nd.js';
+import { Box, Text } from '/lib/boxpusher.js';
+import * as nd from '/lib/nd.js';
+import { v3, add, sub, mul, scale, neg, mod} from '/lib/vectors.js';
+import { empty } from '/lib/nd.js';
+import { capture_and_control_ui } from '/lib/control_ui.js';
 
+// debug
 window.THREE = THREE;
+window.gsap = gsap;
 
 // Colors
 const teal = new THREE.Color(0, 0.66, 0.99);
-const red = new THREE.Color(0.99, 0., 0.);
-const blue = new THREE.Color("blue");
 const green = new THREE.Color("green");
-const orange = new THREE.Color("orange");
 const purple = new THREE.Color("purple");
-const pink = new THREE.Color("pink");
-const greyred = new THREE.Color(0.9, 0.6, 0.6);
 const grey = new THREE.Color(0.9, 0.9, 0.9);
 const white = new THREE.Color(0xffffff);
 const black = new THREE.Color(0x000000);
-
-const hsl_color = (h, s=0.9, l=0.8) => new THREE.Color().setHSL(h, s, l);
 
 // Scenegraph
 const scene = new THREE.Scene();
@@ -28,14 +26,14 @@ scene.background = new THREE.Color(white);
 // WebGL Render
 const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+document.getElementById("canvas").appendChild( renderer.domElement );
 
 // CSS Element Render
 const labelRenderer = new CSS2DRenderer();
 labelRenderer.setSize( window.innerWidth, window.innerHeight );
 labelRenderer.domElement.style.position = 'absolute';
 labelRenderer.domElement.style.top = '0px';
-document.body.appendChild( labelRenderer.domElement );
+document.getElementById("canvas").appendChild( labelRenderer.domElement );
 
 // Animation Constants
 
@@ -59,77 +57,69 @@ camera.position.z = 1;
 
 // spacing
 const spacing = 0.125;
-const box_size = {x: spacing, y: spacing};
+const box_size = v3(spacing, spacing, 0);
 const devSpacing = (2 * N + 3) * spacing;
 const devSize = (2 * N + 2) * spacing;
-const devSpacingV = {x: devSpacing, y: devSpacing, z: devSpacing};
-const devSizeV = {x: devSize, y: devSize, z: devSize};
+const devSpacingV = v3(devSpacing, devSpacing, devSpacing);
+const devSizeV = v3(devSize, devSize, devSize);
 
 // origin
-const grid_origin = {x: -N * N * spacing / 2 - 4 * N * spacing, y: devSpacing, z: 0.0};
+const grid_origin = v3(-N * N * spacing / 2 - 4 * N * spacing,
+                       devSpacing,
+                       0.0);
 
 // unit vectors
-const DX = {x: devSpacing, y:0, z: 0};
-const DY = {x: 0, y:devSpacing, z: 0};
-const dx = {x:spacing, y:0, z:0};
-const dy = {x:0, y:spacing, z:0};
-const dz = {x:0, y:0, z: spacing};
-
-const down_y = scalar3(-2, dy);
-
+const DX = v3(devSpacing, 0, 0);
+const DY = v3(0, devSpacing, 0);
+const dx = v3(spacing, 0, 0);
+const dy = v3(0, spacing, 0);
+const dz = v3(0, 0, spacing);
 
 // unsharded positions
 const p_grid0 = nd.empty([N, N])
-                 .indexMap( ([i, j]) => ({x: j, y: i, z: 0}) )
-                 .add3({x: 0, y: 5, z: 0})
-                 .scalar3(spacing).arr;
+                 .indexMap( ([i, j]) => v3(j, i, 0).add(v3(0, 5, 0)).multiplyScalar(spacing) )
+                 .toArray();
 const q_grid0 = nd.empty([N])
-                  .indexMap( ([i]) => ({x: 0, y: -i, z: 0}) )
-                  .add3({x: N+2, y: N+4, z: 0})
-                  .scalar3(spacing).arr;
+                  .indexMap( ([i]) => v3(0, -i, 0).add(v3(N+2, N+4, 0)).multiplyScalar(spacing) )
+                  .toArray();
 const a_grid0 = nd.empty([N])
-                  .indexMap( ([i]) => ({x: 0, y: -i, z: 0}) )
-                  .add3({x: N+5, y: N+4, z: 0})
-                  .scalar3(spacing).arr;
+                  .indexMap( ([i]) => v3(0, -i, 0).add(v3(N+5, N+4, 0)).multiplyScalar(spacing) )
+                  .toArray();
 
 // sharded positions
 const device_grid = nd.empty([N, 1])
-                      .indexMap( ([i, j]) => ({x: i, y: j, z: 0}) )
-                      .scalar3(devSpacing)
-                      .add3(grid_origin);
+    .indexMap( ([i, j]) => v3(i, j, 0).multiplyScalar(devSpacing).add(grid_origin) );
 const p_grid = nd.empty([N, 1])
-                 .indexMap( ([i, j]) => ({x: i, y: j, z: 0}) )
-                 .add3({x: 1, y: -2, z: 0})
-                 .scalar3(spacing);
+    .indexMap( ([i, j]) => v3(i, j, 0).add(v3(1, -2, 0)).multiplyScalar(spacing) );
 const q_grid = nd.empty([1, 1])
-                 .indexMap( ([i, j]) => ({x: i, y: j, z: 0}) )
-                 .add3({x: N+2, y: -4, z: 0})
-                 .scalar3(spacing);
+    .indexMap( ([i, j]) => v3(i, j, 0).add(v3(N+2, -4, 0)).multiplyScalar(spacing) );
 const a_grid = nd.empty([1, 1])
-                 .indexMap( ([i, j]) => ({x: i, y: j, z: 0}) )
-                 .add3({x: 2*N, y: -2, z: 0})
-                 .scalar3(spacing);
-const p_posns = device_grid.outerMap(add3, p_grid).squeeze().arr;
-const q_posns = device_grid.outerMap(add3, q_grid).squeeze().arr;
-const a_posns = device_grid.outerMap(add3, a_grid).squeeze().arr;
-const device_posns = device_grid.arr;
+    .indexMap( ([i, j]) => v3(i, j, 0).add(v3(2*N, -2, 0)).multiplyScalar(spacing) );
+const p_posns = device_grid.outerMap(add, p_grid).squeeze().toArray();
+const q_posns = device_grid.outerMap(add, q_grid).squeeze().toArray();
+const a_posns = device_grid.outerMap(add, a_grid).squeeze().toArray();
+const device_posns = device_grid.toArray();
 
-const right_boundary = add3(q_posns[N-1], down_y, DX);
-const left_boundary = add3(q_posns[0], down_y, neg3(DX));
+const right_boundary = add(q_posns[N-1], scale(-2, dy), DX);
+const left_boundary = add(q_posns[0], scale(-2, dy), neg(DX));
 
 
 // devices
 let devices = nd.map(val => new Box(val, devSizeV, grey, 0.0, scene), device_posns);
 
 // Edge condition: white blocks to mask R/L edge shards moving.
-let maskL = new Box(add3(device_posns[N-1][0], DX, dz), devSpacingV, white, 1.0, scene);
-let maskR = new Box(add3(device_posns[0][0], neg3(DX), dz), devSpacingV, white, 1.0, scene);
+let maskL = new Box(add(device_posns[N-1][0], DX, dz), devSpacingV, white, 1.0, scene);
+let maskR = new Box(add(device_posns[0][0], neg(DX), dz), devSpacingV, white, 1.0, scene);
 
-const multiply_0 = new Text(add3(q_grid0[N/2], scalar3(-1.2, dx), scalar3(-0.8, dy)), "*", 0.2, black, 1.0, scene);
-const equals_0 = new Text(add3(q_grid0[N/2], scalar3(2, dx), scalar3(-0.4, dy)), "=", 0.2, black, 0.0, scene);
+const multiply_0 = new Text(add(q_grid0[N/2], scale(-1.2, dx), scale(-0.8, dy)),
+                            "*", 0.2, black, 1.0, scene);
+const equals_0 = new Text(add(q_grid0[N/2], scale(2, dx), scale(-0.4, dy)), 
+                          "=", 0.2, black, 0.0, scene);
 
-const multiplies = q_posns.map(v => new Text(add3(v, scalar3(-0.6, dx), scalar3(-0.8, dy)), "*", 0.1, black, 0.0, scene));
-const plusses = a_posns.map(v => new Text(add3(v, scalar3(-0.6, dx), scalar3(-0.5, dy)), "+", 0.1, black, 0.0, scene));
+const multiplies = q_posns.map(
+    v => new Text(add(v, scale(-0.6, dx), scale(-0.8, dy)), "*", 0.1, black, 0.0, scene));
+const plusses = a_posns.map(
+    v => new Text(add(v, scale(-0.6, dx), scale(-0.75, dy)), "+", 0.1, black, 0.0, scene));
 
 // P, Q arrays and accumulator A
 let Ps = nd.map(val => new Box(val, box_size, purple, 1.0, scene), p_grid0);
@@ -177,12 +167,12 @@ for(let step = 0; step < N; step++) {
   for(let i = 0; i < N; i++) {
     let idx = mod(i + step, N);
     movingPs[i] = Ps[i][idx].clone(true, t)
-                            .toPosition(sub3(q_posns[i], scalar3(2, dx)), t);
+                            .toPosition(sub(q_posns[i], scale(2, dx)), t);
     Ps[i][idx].toOpacity(0.1, t, 0.0);
     multiplies[i].toOpacity(1.0, t, tick+tick).toOpacity(0.0, t+2*tick);
     if(step != N-1) {
       movingQs[i] = Qs[i].clone(true, t)
-                         .toPosition(add3(q_posns[i], down_y), t);
+                         .toPosition(add(q_posns[i], scale(-2, dy)), t);
     }
   }
 
@@ -199,10 +189,12 @@ for(let step = 0; step < N; step++) {
     // }
     movingPs[i].toPosition(q_posns[i], t, tick)
                .toColor(teal, t, tick)
-               .toPosition(add3(a_posns[i], scalar3(-2, dx)), t+einsum_dur-2*tick)
+               .toPosition(add(a_posns[i], scale(-2, dx)), t+einsum_dur-2*tick)
                .toPosition(a_posns[i], t+einsum_dur);
     if(step != 0) {
-      plusses[i].toOpacity(1.0, t, t+einsum_dur-tick).toOpacity(0.0, t+einsum_dur);
+      plusses[i]
+      .toOpacity(1.0, t, t+einsum_dur-tick)
+      .toOpacity(0.0, t+einsum_dur);
     }
   }
 
@@ -211,14 +203,14 @@ for(let step = 0; step < N; step++) {
     for(let i = 0; i < N; i++) {
       let fwd = mod(i + 1, N);
       if(i != N-1) {
-        movingQs[i].toPosition(add3(q_posns[fwd], down_y), t, einsum_dur)
+        movingQs[i].toPosition(add(q_posns[fwd], scale(-2, dy)), t, einsum_dur)
                    .toPosition(q_posns[fwd], t+einsum_dur, 2*tick);
       }
       else {
         movingQs[i].clone(true, t)
                    .toPosition(right_boundary, t, einsum_dur);
         movingQs[i].toPosition(left_boundary, t, 0.0)
-                   .toPosition(add3(q_posns[fwd], down_y), t, einsum_dur)
+                   .toPosition(add(q_posns[fwd], scale(-2, dy)), t, einsum_dur)
                    .toPosition(q_posns[fwd], t+einsum_dur, 2*tick);
       }
     }
@@ -270,3 +262,13 @@ function animation(time) {
     labelRenderer.render( scene, camera );
 }
 renderer.setAnimationLoop(animation);
+
+
+// Capture and Control UI
+
+capture_and_control_ui(
+  "controls",               // control div id
+  t + 4 * tick,             // animation time in seconds
+  "ag_matmul.webm",         // save filename
+  "video/webm"              // save format
+  );
