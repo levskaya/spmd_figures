@@ -79,8 +79,8 @@ const inner_delta = v3(spacing + 0.02, spacing + 0.02, 0);
 
 let shard_posns = empty([outer_sizes.x, outer_sizes.y, inner_sizes.x, inner_sizes.y])
     .indexMap(
-        ([i, j, k, l]) => add(add(device_posns[i][j], inner_offset),
-                              mul(v3(l, inner_sizes.y - k, 0), inner_delta)))
+      ([i, j, k, l]) => add(add(device_posns[i], inner_offset),
+                            mul(v3(l, inner_sizes.y - k, 0), inner_delta)))
     .toArray();
 shard_posns = fromArray(shard_posns).squeeze().toArray();  // now 3D
 
@@ -168,7 +168,7 @@ t += 4*tick;
 caption.toText("we'd like to switch the sharded axis", t);
 t += 4*tick;
 
-caption.toText("all to all tranposes the sharding along the ring", t);
+caption.toText("all to all transposes the sharding along the ring", t);
 t += 4*tick;
 
 // caption.toText("", t);
