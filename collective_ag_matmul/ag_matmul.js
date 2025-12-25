@@ -25,6 +25,7 @@ scene.background = new THREE.Color(white);
 
 // WebGL Render
 const renderer = new THREE.WebGLRenderer({antialias: true});
+renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.getElementById("canvas").appendChild( renderer.domElement );
 
@@ -42,7 +43,7 @@ document.getElementById("canvas").appendChild( labelRenderer.domElement );
 const N = 4;
 
 // Cameras
-const frustumSize = 3 * N;
+const frustumSize = N;
 const aspect = window.innerWidth / window.innerHeight;
 // Orthographic
 const camera = new THREE.OrthographicCamera(
@@ -245,6 +246,11 @@ for(let i = 0; i < N; i++) {
   As[i].toPosition(a_grid0[i], t+tick, 6*tick);
 }
 t+=6*tick;
+
+// Hide plusses before final summary
+for(let i = 0; i < N; i++) {
+  plusses[i].toPosition(v3(100, 100, 0), t - 2*tick, 0.01);
+}
 
 multiply_0.toOpacity(1.0, t, tick);
 equals_0.toOpacity(1.0, t, tick);
